@@ -57,9 +57,15 @@ On Windows, `start.ps1` starts the server and opens the browser
 when one exists.
 
 **Sample data:** Luminor was developed with chest CT scans from the
-[Kaggle Data Science Bowl 2017](https://www.kaggle.com/c/data-science-bowl-2017) (`stage1`,
-one folder per patient, with `stage1_labels.csv`). The dataset is not included; download it from
-Kaggle under its own terms.
+[Kaggle Data Science Bowl 2017](https://www.kaggle.com/c/data-science-bowl-2017). The dataset is
+not included: download it from the
+[competition data page](https://www.kaggle.com/c/data-science-bowl-2017/data) (a Kaggle account
+and acceptance of the [competition rules](https://www.kaggle.com/c/data-science-bowl-2017/rules)
+are required), extract `stage1`, then run:
+
+```bash
+python server.py --data /path/to/stage1 --labels /path/to/stage1_labels.csv
+```
 
 ## Documentation
 
@@ -110,6 +116,25 @@ dependencies.
 | GET | `/api/series/<id>/meta` | shape, spacing, z positions, orientation, HU range |
 | GET | `/api/series/<id>/volume` | `int16` little-endian volume, C order (z, y, x) |
 | GET / PUT | `/api/series/<id>/findings` | saved findings (JSON list) |
+
+## Credits
+
+- **Data:** the chest CT scans used to develop Luminor and shown in the documentation
+  screenshots come from the
+  [Kaggle Data Science Bowl 2017](https://www.kaggle.com/c/data-science-bowl-2017), hosted by
+  [Kaggle](https://www.kaggle.com/). Many thanks to Kaggle and the competition organisers for
+  making this anonymised dataset available to the research community. The data is not part of
+  this repository and remains subject to the
+  [competition rules](https://www.kaggle.com/c/data-science-bowl-2017/rules).
+- **Libraries:** [pydicom](https://pydicom.github.io/) and [NumPy](https://numpy.org/) on the
+  server; the browser app has no dependencies.
+- **Typography:** [Inter](https://rsms.me/inter/) by Rasmus Andersson, served by Google Fonts.
+
+## License
+
+Luminor is released under the [Apache License 2.0](LICENSE). See [NOTICE](NOTICE) for
+attribution. The license covers the source code and documentation, not the Kaggle data shown in
+the screenshots.
 
 ## Privacy
 

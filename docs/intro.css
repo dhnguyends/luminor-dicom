@@ -118,3 +118,7 @@ footer.site .wrap { display: flex; flex-wrap: wrap; gap: 8px 22px; justify-conte
   .wrap { padding: 0 16px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+.data-note { margin: 24px 0 0; padding: 18px 22px; border-radius: 14px; background: var(--surface); border: 1px solid var(--sep); color: var(--text-2); font-size: 15px; }
+.data-note strong { color: var(--text); }
+footer.site span { line-height: 1.7; }
