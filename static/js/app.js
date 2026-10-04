@@ -58,6 +58,7 @@ const state = {
   active: null,
   maximized: null,
   cine: { playing: false, fps: 12, last: 0 },
+  folder: { path: '', series: 0, browse: false },
 };
 
 // ---------------------------------------------------------------------------
@@ -655,6 +656,121 @@ $('label-filter').addEventListener('click', e => {
 });
 
 // ---------------------------------------------------------------------------
+// Data folder (the folder of medical images)
+// ---------------------------------------------------------------------------
+async function loadFolderInfo() {
+  try {
+    const r = await fetch('/api/data-folder');
+    if (r.ok) state.folder = await r.json();
+  } catch { /* older server: keep defaults */ }
+  renderFolder();
+}
+
+function folderName(path) {
+  const parts = path.split(/[\\/]+/).filter(Boolean);
+  return parts.slice(-2).join('\\') || path || '—';
+}
+
+function renderFolder() {
+  const name = $('folder-name');
+  name.textContent = state.folder.path ? folderName(state.folder.path) : '—';
+  name.title = state.folder.path;
+}
+
+/** Native folder picker: the desktop app window (pywebview) or the local server. */
+function canBrowse() { return !!window.pywebview?.api?.choose_folder || state.folder.browse; }
+
+async function browseFolder() {
+  if (window.pywebview?.api?.choose_folder) return window.pywebview.api.choose_folder();
+  const r = await fetch('/api/browse-folder', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+  });
+  const res = await r.json();
+  if (!r.ok) throw new Error(res.error || r.statusText);
+  return res.path;
+}
+
+function showFolderError(key, vars) {
+  const el = $('folder-error');
+  el.hidden = !key;
+  el.textContent = key ? t(key, vars) : '';
+}
+
+function openFolderSheet() {
+  $('folder-path').value = state.folder.path || '';
+  $('folder-current').textContent = state.folder.path || '—';
+  $('folder-browse').hidden = !canBrowse();
+  showFolderError(null);
+  $('folder-sheet').showModal();
+  $('folder-path').select();
+}
+
+async function changeFolder(path) {
+  const button = $('folder-open');
+  button.disabled = true;
+  showFolderError(null);
+  toast(t('folder.opening'));
+  try {
+    const r = await fetch('/api/data-folder', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path }),
+    });
+    const res = await r.json();
+    if (!r.ok) {
+      const known = ['missing_path', 'not_found', 'no_series'].includes(res.error);
+      return showFolderError(known ? `folder.err.${res.error}` : 'folder.err.other', { path, msg: res.error || r.statusText });
+    }
+    $('folder-sheet').close();
+    state.folder = res;
+    renderFolder();
+    resetViewer();
+    const series = await loadCatalog();
+    toast(t('toast.folder', { n: fmt(res.series), name: folderName(res.path) }));
+    if (series[0]) openPrimary(series[0].id);
+  } catch (err) {
+    showFolderError('folder.err.other', { msg: err.message });
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/** Close the open studies before switching to another folder. */
+function resetViewer() {
+  toggleCine(false);
+  state.primary = null;
+  state.prior = null;
+  state.findings = [];
+  state.selectedId = null;
+  state.draft = null;
+  state.query = '';
+  $('search').value = '';
+  if (state.layout === 'compare') setLayout('single');
+  $('series-info').innerHTML = '<dt>—</dt><dd></dd>';
+  document.title = 'Luminor';
+  renderSeriesInfo();
+  renderFindings();
+  sync();
+}
+
+$('change-folder').onclick = openFolderSheet;
+$('folder-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const path = $('folder-path').value.trim().replace(/^"|"$/g, '');
+  if (!path) return showFolderError('folder.err.missing_path');
+  changeFolder(path);
+});
+$('folder-browse').onclick = async () => {
+  try {
+    const path = await browseFolder();
+    if (path) {
+      $('folder-path').value = path;
+      changeFolder(path);
+    }
+  } catch {
+    showFolderError('folder.err.browse');
+  }
+};
+
+// ---------------------------------------------------------------------------
 // Loading
 // ---------------------------------------------------------------------------
 async function fetchVolume(id, titleKey) {
@@ -932,6 +1048,7 @@ async function init() {
   setActive(vps.main);
   if (window.innerWidth < 1280) $('app').classList.add('no-inspector');
   if (window.innerWidth < 1000) $('app').classList.add('no-sidebar');
+  loadFolderInfo();
   try {
     const series = await loadCatalog();
     let last = null;

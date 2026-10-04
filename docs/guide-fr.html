@@ -92,6 +92,15 @@
   <li>Au démarrage suivant, Luminor rouvre la dernière série consultée.</li>
 </ul>
 
+<h3 id="folder">Changer de dossier d’images</h3>
+<p>Le haut de la bibliothèque indique le <strong>dossier d’images</strong> actuel. Pour ouvrir un autre dossier d’images médicales à tout moment :</p>
+<ol class="steps">
+  <li>Cliquez sur <strong>Changer…</strong> à côté du nom du dossier.</li>
+  <li>Cliquez sur <strong>Parcourir…</strong> pour choisir un dossier avec le sélecteur de Windows, ou collez son chemin (Explorateur de fichiers → clic droit sur le dossier → <strong>Copier en tant que chemin d’accès</strong>), puis cliquez sur <strong>Ouvrir le dossier</strong>.</li>
+  <li>Luminor vérifie que le dossier contient des séries DICOM, ferme les examens ouverts, recharge la bibliothèque et ouvre la première série.</li>
+</ol>
+<p>Choisissez le dossier dans lequel <strong>chaque sous-dossier est une série</strong> de fichiers <code>.dcm</code>. Si vous choisissez un dossier de série, Luminor ouvre son dossier parent. Un fichier CSV d’étiquettes placé dans le dossier ou juste au-dessus est pris en compte automatiquement. Vos fichiers DICOM sont seulement lus, jamais modifiés.</p>
+
 <h3 id="language">Langue de l’interface</h3>
 <p>Le bouton <strong>FR / EN</strong> (avec un globe) de la barre d’outils fait passer toute l’interface du français à l’anglais et inversement, sans recharger l’examen : libellés, aide, observations, projet de compte rendu et informations affichées sur l’image. Luminor mémorise votre choix ; au premier lancement, il suit la langue du navigateur.</p>
 <p>En français, Luminor applique les conventions habituelles : unités <strong>UH</strong>, virgule décimale (90,9 mm), fenêtre notée <strong>C</strong> (centre) et <strong>L</strong> (largeur), repères <strong>D/G</strong> (droite/gauche). Les noms donnés aux observations restent tels que vous les avez saisis.</p>

@@ -35,11 +35,11 @@ index.html ──loads──► style.css
 
 The app's skeleton, with no logic in it:
 
-- **Library** (left): search field, Cancer / No cancer filter, series list.
+- **Library** (left): images folder with its **Change…** button, search field, Cancer / No cancer filter, series list.
 - **Toolbar** (top): layout, plane and tool buttons, Linked toggle, cine, help, EN/FR button.
 - **Stage** (centre): four image panes (main, coronal, sagittal, comparison) and the loading card.
 - **Inspector** (right): Window, Slab, Cine, Findings and Series cards.
-- **Two sheets**: keyboard help and the report draft. Also the notification banner.
+- **Three sheets**: keyboard help, the images folder, and the report draft. Also the notification banner.
 
 Static labels carry `data-i18n` attributes so [`i18n.js`](js/i18n.js) can translate them.
 
@@ -178,6 +178,12 @@ Hounsfield units). Its whole job is to find series, read them, and hand them to 
   | `GET /api/series/<id>/meta` | Geometry and metadata (loads the series if needed) |
   | `GET /api/series/<id>/volume` | The raw volume, 16-bit HU values (`int16`), sent in 1 MB chunks |
   | `GET` / `PUT /api/series/<id>/findings` | Read or replace the saved findings (JSON list) |
+  | `GET` / `POST /api/data-folder` | Current images folder; POST `{"path": …}` switches to another folder (validated, labels found automatically) |
+  | `POST /api/browse-folder` | Opens the native folder picker on this computer (tkinter) and returns the chosen path |
+
+  POST and PUT must be `application/json` and are refused when sent by a web page from another
+  site (`Origin` check). The desktop app replaces the tkinter picker with the Windows one
+  (`window.pywebview.api.choose_folder`) and saves a new folder through `Handler.on_data_change`.
 
 - **Safe saving:** findings are written to a temporary file and then swapped in, so a crash can't
   leave a half-written file. Loading errors are returned as JSON messages, which the app shows as

@@ -33,8 +33,10 @@ import numpy as np
 import pydicom
 
 APP_DIR = Path(__file__).resolve().parent
-STATIC_DIR = APP_DIR / "static"
-DOCS_DIR = APP_DIR / "docs"  # user guides + intro page (also published with GitHub Pages)
+# Bundled resources live in sys._MEIPASS when frozen with PyInstaller (Windows exe)
+RESOURCE_DIR = Path(getattr(sys, "_MEIPASS", APP_DIR))
+STATIC_DIR = RESOURCE_DIR / "static"
+DOCS_DIR = RESOURCE_DIR / "docs"  # user guides + intro page (also published with GitHub Pages)
 FINDINGS_DIR = APP_DIR / "data" / "findings"
 DEFAULT_DATA = APP_DIR.parent / "img" / "DSB3" / "stage1" / "stage1"
 DEFAULT_LABELS = APP_DIR.parent / "img" / "DSB3" / "stage1_labels.csv"
@@ -61,15 +63,23 @@ class Catalog:
 
     @staticmethod
     def _read_labels(path: Path | None) -> dict[str, int]:
+        """Optional id,cancer CSV; anything else (other columns, bad values) is ignored."""
         if not path or not path.is_file():
             return {}
-        with path.open(newline="") as f:
-            return {row["id"]: int(row["cancer"]) for row in csv.DictReader(f)}
+        try:
+            with path.open(newline="", encoding="utf-8-sig") as f:
+                return {row["id"]: int(row["cancer"]) for row in csv.DictReader(f)}
+        except (OSError, KeyError, ValueError, TypeError, csv.Error) as exc:
+            print(f"[luminor] labels ignored ({path.name}: {exc!r})", file=sys.stderr)
+            return {}
 
     def _count_slices(self) -> None:
         for sid in self.ids:
-            with os.scandir(self.root / sid) as it:
-                self.counts[sid] = sum(1 for e in it if e.name.lower().endswith(".dcm"))
+            try:
+                with os.scandir(self.root / sid) as it:
+                    self.counts[sid] = sum(1 for e in it if e.name.lower().endswith(".dcm"))
+            except OSError:
+                self.counts[sid] = 0
 
     def path(self, sid: str) -> Path | None:
         if not SERIES_ID.match(sid) or sid not in self.ids:
@@ -81,6 +91,42 @@ class Catalog:
             {"id": sid, "slices": self.counts.get(sid), "label": self.labels.get(sid)}
             for sid in self.ids
         ]
+
+
+def _has_dicom(folder: Path) -> bool:
+    try:
+        return any(f.suffix.lower() == ".dcm" for f in folder.iterdir())
+    except OSError:
+        return False
+
+
+def resolve_data_folder(folder: Path | str) -> Path | None:
+    """Folder of series sub-folders for a user's choice, or None if it holds no series.
+
+    Accepts that folder itself, or a single series folder (its parent is used).
+    """
+    folder = Path(folder).expanduser().resolve()
+    if not folder.is_dir():
+        return None
+    if _has_dicom(folder):  # a single series was chosen
+        return folder.parent
+    try:
+        subdirs = [d for d in folder.iterdir() if d.is_dir()]
+    except OSError:
+        return None
+    return folder if any(_has_dicom(d) for d in subdirs[:200]) else None
+
+
+def find_labels(data: Path) -> Path | None:
+    """Optional id,cancer CSV (e.g. Kaggle stage1_labels.csv) in or up to two levels above data."""
+    for folder in (data, data.parent, data.parent.parent):
+        try:
+            matches = sorted(folder.glob("*labels*.csv"))
+        except OSError:
+            continue
+        if matches:
+            return matches[0]
+    return None
 
 
 # --------------------------------------------------------------------------- #
@@ -182,9 +228,40 @@ class VolumeCache:
 # --------------------------------------------------------------------------- #
 # HTTP                                                                        #
 # --------------------------------------------------------------------------- #
+_browse_lock = threading.Lock()
+
+
+def tk_browse_folder(initial: str | None = None) -> str | None:
+    """Native folder picker on this computer (the server is local), via tkinter."""
+    import tkinter as tk
+    from tkinter import filedialog
+
+    with _browse_lock:
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        try:
+            return filedialog.askdirectory(parent=root, initialdir=initial or None, mustexist=True) or None
+        finally:
+            root.destroy()
+
+
 class Handler(SimpleHTTPRequestHandler):
     catalog: Catalog
     cache: VolumeCache
+    findings_dir: Path = FINDINGS_DIR
+    # Native folder picker used by POST /api/browse-folder (None disables it)
+    browse_folder = staticmethod(tk_browse_folder)
+    # Called with the new data folder after a change (the desktop app saves it)
+    on_data_change = None
+
+    @classmethod
+    def set_data_folder(cls, data: Path, labels: Path | None = None) -> Catalog:
+        """Switch the series library to another folder (labels are looked up if not given)."""
+        catalog = Catalog(Path(data).resolve(), labels if labels is not None else find_labels(Path(data)))
+        cls.catalog = catalog
+        cls.cache = VolumeCache(catalog)
+        return catalog
 
     # Windows' registry can map .js to text/plain, which breaks ES modules
     extensions_map = {
@@ -238,8 +315,33 @@ class Handler(SimpleHTTPRequestHandler):
             return None
         return parts[2:]
 
+    def _endpoint(self) -> str:
+        return self.path.split("?", 1)[0].rstrip("/")
+
+    def _same_origin(self) -> bool:
+        """Refuse requests sent by web pages from other sites (they carry their own Origin)."""
+        origin = self.headers.get("Origin")
+        return origin is None or origin == f"http://{self.headers.get('Host')}"
+
+    def _read_json_body(self, limit: int):
+        if not (self.headers.get("Content-Type") or "").startswith("application/json"):
+            raise ValueError("expected application/json")
+        length = int(self.headers.get("Content-Length") or 0)
+        if not 0 <= length <= limit:
+            raise ValueError("invalid size")
+        return json.loads(self.rfile.read(length) or b"{}")
+
+    def _folder_info(self):
+        return {
+            "path": str(self.catalog.root),
+            "series": len(self.catalog.ids),
+            "browse": self.browse_folder is not None,
+        }
+
     # -- verbs ---------------------------------------------------------------
     def do_GET(self):
+        if self._endpoint() == "/api/data-folder":
+            return self._json(self._folder_info())
         route = self._route()
         if route is None:
             return super().do_GET()
@@ -262,7 +364,46 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception as exc:  # report loader problems to the UI
             return self._json({"error": f"{type(exc).__name__}: {exc}"}, HTTPStatus.INTERNAL_SERVER_ERROR)
 
+    def do_POST(self):
+        if not self._same_origin():
+            return self._json({"error": "Forbidden"}, HTTPStatus.FORBIDDEN)
+        endpoint = self._endpoint()
+        try:
+            body = self._read_json_body(64_000)
+        except ValueError as exc:
+            return self._json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+
+        if endpoint == "/api/browse-folder":
+            if self.browse_folder is None:
+                return self._json({"error": "Folder picker unavailable"}, HTTPStatus.NOT_IMPLEMENTED)
+            try:
+                return self._json({"path": self.browse_folder(str(self.catalog.root))})
+            except Exception as exc:  # e.g. no display / tkinter missing
+                return self._json({"error": f"{type(exc).__name__}: {exc}"}, HTTPStatus.INTERNAL_SERVER_ERROR)
+
+        if endpoint == "/api/data-folder":
+            raw = str(body.get("path") or "").strip().strip('"')
+            if not raw:
+                return self._json({"error": "missing_path"}, HTTPStatus.BAD_REQUEST)
+            if not Path(raw).expanduser().is_dir():
+                return self._json({"error": "not_found", "path": raw}, HTTPStatus.BAD_REQUEST)
+            data = resolve_data_folder(raw)
+            if data is None:
+                return self._json({"error": "no_series", "path": raw}, HTTPStatus.BAD_REQUEST)
+            type(self).set_data_folder(data)
+            print(f"[luminor] data folder changed: {data} ({len(self.catalog.ids)} series)", flush=True)
+            if self.on_data_change:
+                try:
+                    self.on_data_change(data)
+                except Exception as exc:
+                    print(f"[luminor] could not save the data folder: {exc!r}", file=sys.stderr)
+            return self._json(self._folder_info())
+
+        return self._json({"error": "Not found"}, HTTPStatus.NOT_FOUND)
+
     def do_PUT(self):
+        if not self._same_origin():
+            return self._json({"error": "Forbidden"}, HTTPStatus.FORBIDDEN)
         route = self._route()
         if not route or len(route) != 2 or route[1] != "findings" or self.catalog.path(route[0]) is None:
             return self._json({"error": "Not found"}, HTTPStatus.NOT_FOUND)
@@ -275,15 +416,15 @@ class Handler(SimpleHTTPRequestHandler):
                 raise ValueError("expected a list")
         except ValueError as exc:
             return self._json({"error": f"Invalid JSON: {exc}"}, HTTPStatus.BAD_REQUEST)
-        FINDINGS_DIR.mkdir(parents=True, exist_ok=True)
-        target = FINDINGS_DIR / f"{route[0]}.json"
+        self.findings_dir.mkdir(parents=True, exist_ok=True)
+        target = self.findings_dir / f"{route[0]}.json"
         tmp = target.with_suffix(".tmp")
         tmp.write_text(json.dumps(findings, indent=1), encoding="utf-8")
         os.replace(tmp, target)
         return self._json({"saved": len(findings)})
 
     def _read_findings(self, sid: str):
-        f = FINDINGS_DIR / f"{sid}.json"
+        f = self.findings_dir / f"{sid}.json"
         return json.loads(f.read_text(encoding="utf-8")) if f.is_file() else []
 
     def _send_volume(self, sid: str):
@@ -297,6 +438,22 @@ class Handler(SimpleHTTPRequestHandler):
             self.wfile.write(view[i : i + (1 << 20)])
 
 
+def create_server(
+    data: Path, labels: Path | None = None, port: int = 8770, findings_dir: Path | None = None
+) -> ThreadingHTTPServer:
+    """Build the HTTP server on 127.0.0.1 (port 0 picks a free port); call serve_forever()."""
+    catalog = Handler.set_data_folder(Path(data), labels)
+    if not catalog.ids:
+        print(f"[luminor] warning: no series found in {data}", file=sys.stderr)
+    if findings_dir is not None:
+        Handler.findings_dir = Path(findings_dir)
+
+    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    server.daemon_threads = True
+    print(f"[luminor] {len(catalog.ids)} series in {catalog.root}")
+    return server
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Luminor CT viewer")
     parser.add_argument("--port", type=int, default=8770)
@@ -304,16 +461,8 @@ def main() -> None:
     parser.add_argument("--labels", type=Path, default=DEFAULT_LABELS, help="optional id,cancer CSV")
     args = parser.parse_args()
 
-    catalog = Catalog(args.data.resolve(), args.labels)
-    if not catalog.ids:
-        print(f"[luminor] warning: no series found in {args.data}", file=sys.stderr)
-    Handler.catalog = catalog
-    Handler.cache = VolumeCache(catalog)
-
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
-    server.daemon_threads = True
-    print(f"[luminor] {len(catalog.ids)} series in {catalog.root}")
-    print(f"[luminor] Luminor running at http://127.0.0.1:{args.port}/", flush=True)
+    server = create_server(args.data, args.labels, args.port)
+    print(f"[luminor] Luminor running at http://127.0.0.1:{server.server_port}/", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

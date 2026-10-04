@@ -118,6 +118,11 @@ dependencies.
 | GET | `/api/series/<id>/meta` | shape, spacing, z positions, orientation, HU range |
 | GET | `/api/series/<id>/volume` | `int16` little-endian volume, C order (z, y, x) |
 | GET / PUT | `/api/series/<id>/findings` | saved findings (JSON list) |
+| GET / POST | `/api/data-folder` | current images folder; POST `{"path": …}` switches to another one |
+| POST | `/api/browse-folder` | opens the native folder picker on this computer, returns the chosen path |
+
+POST and PUT requests must be `application/json` and are refused when sent by a web page from
+another site (`Origin` check), so other websites cannot change Luminor's folder or findings.
 
 ## Credits
 

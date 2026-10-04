@@ -19,6 +19,11 @@
     <div class="sidebar-head">
       <div class="brand"><img src="favicon.svg" alt=""><div><strong>Luminor</strong><span data-i18n="app.subtitle">CT Viewer</span></div></div>
     </div>
+    <div class="folder-row">
+      <span class="folder-icon" data-icon="folder"></span>
+      <span class="folder-text"><span class="folder-caption" data-i18n="folder.caption">Images folder</span><strong id="folder-name">—</strong></span>
+      <button class="btn small" id="change-folder" data-i18n-title="folder.changeTitle"><span data-i18n="folder.change">Change…</span></button>
+    </div>
     <label class="search"><span data-icon="search"></span>
       <input id="search" type="search" autocomplete="off" spellcheck="false" data-i18n-placeholder="search.placeholder" data-i18n-aria="search.placeholder">
     </label>
@@ -131,6 +136,31 @@
     <span class="tb-spacer"></span>
     <a class="btn" id="other-guide" target="_blank" rel="noopener"><span data-i18n="help.otherGuide"></span></a>
     <a class="btn primary" id="user-guide" target="_blank" rel="noopener"><span data-icon="report"></span><span data-i18n="help.guide"></span></a>
+  </footer>
+</dialog>
+
+<dialog class="sheet" id="folder-sheet" data-i18n-aria="folder.title">
+  <header><h2 data-i18n="folder.title">Medical images folder</h2><button class="icon-btn" data-close data-i18n-aria="help.close"><span data-icon="close"></span></button></header>
+  <form class="folder-form" id="folder-form" novalidate>
+    <p class="dim" data-i18n="folder.help">Choose the folder in which each sub-folder holds the .dcm files of one CT series.</p>
+    <pre class="folder-example">D:\scans\
+├── patient-001\  *.dcm
+├── patient-002\  *.dcm
+└── patient-003\  *.dcm</pre>
+    <label class="folder-field"><span data-i18n="folder.pathLabel">Folder path</span>
+      <span class="folder-input">
+        <input id="folder-path" type="text" spellcheck="false" autocomplete="off" data-i18n-placeholder="folder.placeholder">
+        <button type="button" class="btn" id="folder-browse"><span data-icon="folder"></span><span data-i18n="folder.browse">Browse…</span></button>
+      </span>
+    </label>
+    <p class="folder-current"><span data-i18n="folder.current">Current folder:</span> <code id="folder-current"></code></p>
+    <p class="folder-error" id="folder-error" role="alert" hidden></p>
+  </form>
+  <footer>
+    <span class="dim" data-i18n="folder.note">Your DICOM files are only read, never modified.</span>
+    <span class="tb-spacer"></span>
+    <button class="btn" data-close><span data-i18n="folder.cancel">Cancel</span></button>
+    <button class="btn primary" id="folder-open" type="submit" form="folder-form"><span data-icon="folder"></span><span data-i18n="folder.open">Open folder</span></button>
   </footer>
 </dialog>
 

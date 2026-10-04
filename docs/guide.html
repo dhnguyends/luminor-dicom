@@ -86,6 +86,15 @@
   <li>The next time you start Luminor, it reopens the last series you viewed.</li>
 </ul>
 
+<h3 id="folder">Change the images folder</h3>
+<p>The top of the library shows the current <strong>Images folder</strong>. To open another folder of medical images at any time:</p>
+<ol class="steps">
+  <li>Click <strong>Change…</strong> next to the folder name.</li>
+  <li>Click <strong>Browse…</strong> to pick a folder with the Windows folder picker, or paste its path (File Explorer → right-click the folder → <strong>Copy as path</strong>), then click <strong>Open folder</strong>.</li>
+  <li>Luminor checks that the folder contains DICOM series, closes the open studies, reloads the library and opens the first series.</li>
+</ol>
+<p>Choose the folder in which <strong>each sub-folder is one series</strong> of <code>.dcm</code> files. If you choose a single series folder, Luminor opens its parent folder. A labels CSV in or just above the folder is picked up automatically. Your DICOM files are only read, never modified.</p>
+
 <h3 id="language">Interface language</h3>
 <p>The <strong>EN / FR</strong> button (with a globe) in the toolbar switches the whole interface between English and French without reloading the study: labels, help, findings, the report draft and the on-image text. Luminor remembers your choice; on first launch it follows the browser language.</p>
 <p>In French, Luminor follows French conventions: <strong>UH</strong> for Hounsfield units, decimal commas, <strong>C/L</strong> (centre/largeur) for the window and <strong>D/G</strong> (droite/gauche) instead of R/L for orientation. Finding names stay exactly as you typed them.</p>
