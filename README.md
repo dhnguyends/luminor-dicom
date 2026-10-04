@@ -16,7 +16,7 @@ Python server reads the DICOM files, and a fast browser app does everything else
 > **Research and education use only.** Luminor is not a certified medical device and must not
 > be used for diagnostic or treatment decisions.
 > If you want to use Luminor enhancement for medical use,
-> let's talk linkedin.com/in/dong-hai-nguyen-thanh ↗
+> let's talk [linkedin.com/in/dong-hai-nguyen-thanh](https://www.linkedin.com/in/dong-hai-nguyen-thanh) ↗
 
 ## The seven features
 
