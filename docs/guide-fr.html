@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide utilisateur Luminor</title>
+<meta name="description" content="Lire un scanner avec Luminor : navigation, fenêtrage, MPR, mesures, coupes épaisses, comparaison, observations et compte rendu.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="en" href="guide.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="guide.css">
+</head>
+<body>
+<div class="layout">
+<nav class="toc" aria-label="Sommaire">
+  <a class="brand" href="index-fr.html"><img src="favicon.svg" alt=""><div><strong>Luminor</strong><span>Guide utilisateur</span></div></a>
+  <div class="lang" aria-label="Langue"><a href="guide.html" hreflang="en">English</a><a href="guide-fr.html" hreflang="fr" aria-current="page">Français</a></div>
+  <ol>
+    <li><a href="#welcome">Bienvenue</a></li>
+    <li><a href="#start">Prise en main</a></li>
+    <li><a href="#tour">L’interface</a></li>
+    <li><a href="#navigate">Défilement et ciné</a></li>
+    <li><a href="#window">Fenêtrage</a></li>
+    <li><a href="#mpr">MPR et réticule</a></li>
+    <li><a href="#measure">Mesures</a></li>
+    <li><a href="#slab">MIP et coupes épaisses</a></li>
+    <li><a href="#compare">Comparaison</a></li>
+    <li><a href="#findings">Observations et CR</a></li>
+    <li><a href="#workflow">Une routine de lecture</a></li>
+    <li><a href="#shortcuts">Raccourcis</a></li>
+    <li><a href="#reference">Valeurs en UH</a></li>
+    <li><a href="#troubleshooting">Dépannage</a></li>
+    <li><a href="#limits">Confidentialité et limites</a></li>
+  </ol>
+  <a class="open-app app-link" href="/" data-remote-label="Voir sur GitHub">Ouvrir Luminor</a>
+</nav>
+
+<main>
+<header class="hero" id="welcome">
+  <div class="eyebrow">Guide utilisateur</div>
+  <h1>Lire un scanner avec Luminor</h1>
+  <p class="lede">Luminor est une visionneuse de scanner (TDM) rapide, qui fonctionne en local et s’articule autour des sept gestes que les radiologues utilisent le plus. Ce guide vous accompagne pour chacun d’eux, de l’ouverture d’un examen à l’export d’un projet de compte rendu.</p>
+</header>
+
+<div class="callout safety" role="note">
+  <span class="ic">!</span>
+  <p><strong>Usage réservé à la recherche et à l’enseignement.</strong> Luminor n’est pas un dispositif médical certifié. Ne l’utilisez pas pour prendre des décisions diagnostiques ou thérapeutiques.</p>
+</div>
+
+<div class="callout tip" role="note">
+  <span class="ic">i</span>
+  <p>Luminor s’affiche en français ou en anglais. Ce guide décrit l’interface en français : choisissez la langue avec le bouton <strong>FR / EN</strong> de la barre d’outils (voir <a href="#language">Langue de l’interface</a>).</p>
+</div>
+
+<div class="feature-grid">
+  <div class="feature"><i>1</i><b>Défilement et ciné</b><span>Parcourez des centaines d’images à la molette, ou lisez-les comme un film.</span></div>
+  <div class="feature"><i>2</i><b>Fenêtrage</b><span>Clic droit glissé ou préréglages en une touche : poumon, médiastin, os, foie, cerveau.</span></div>
+  <div class="feature"><i>3</i><b>MPR</b><span>Plans axial, coronal et sagittal reliés par un même réticule.</span></div>
+  <div class="feature"><i>4</i><b>Mesures</b><span>Densité en UH en direct, distances en mm, statistiques de ROI elliptique.</span></div>
+  <div class="feature"><i>5</i><b>MIP et coupes épaisses</b><span>MIP, MinIP et moyenne, de 2 à 40 mm.</span></div>
+  <div class="feature"><i>6</i><b>Comparaison</b><span>Deux examens côte à côte, défilement synchronisé en millimètres.</span></div>
+  <div class="feature"><i>7</i><b>Observations et CR</b><span>Observations nommées, navigation en un clic, projet de compte rendu et images clés.</span></div>
+</div>
+
+<!-- ===================================================================== -->
+<h2 id="start"><span class="num">2</span>Prise en main</h2>
+
+<h3>Démarrer Luminor</h3>
+<ol class="steps">
+  <li>Ouvrez une fenêtre PowerShell dans le dossier <code>Claude-Radio</code>.</li>
+  <li>Lancez <code>.\start.ps1</code>. Le script utilise l’environnement Anaconda <code>DICOM</code> s’il existe, démarre le serveur sur le port 8770 et ouvre votre navigateur au bout de deux secondes.</li>
+  <li>Gardez la fenêtre PowerShell ouverte pendant votre travail. La fermer arrête Luminor.</li>
+</ol>
+<p>Luminor fonctionne à l’adresse <a href="http://127.0.0.1:8770/">http://127.0.0.1:8770/</a> dans Chrome, Edge, Safari ou Firefox. Options :</p>
+<table>
+  <thead><tr><th>Commande</th><th>Effet</th></tr></thead>
+  <tbody>
+    <tr><td><code>.\start.ps1 -Port 9000</code></td><td>Utiliser un autre port si le 8770 est occupé.</td></tr>
+    <tr><td><code>.\start.ps1 -DataDir "D:\scans"</code></td><td>Lire les séries dans un autre dossier. Chaque sous-dossier correspond à une série de fichiers <code>.dcm</code>.</td></tr>
+    <tr><td><code>python server.py --labels fichier.csv</code></td><td>Fichier CSV facultatif <code>id,cancer</code>, utilisé pour les étiquettes et le filtre de la bibliothèque.</td></tr>
+  </tbody>
+</table>
+
+<h3>Ouvrir une série</h3>
+<p>La <strong>bibliothèque</strong>, à gauche, liste toutes les séries du dossier de données. Cliquez sur une ligne pour l’ouvrir. Luminor lit d’abord les fichiers DICOM (quelques secondes), puis charge le volume dans le navigateur. Une carte de progression affiche les deux étapes.</p>
+<ul>
+  <li>Le champ <strong>Rechercher une série</strong> filtre par identifiant de série. Saisissez n’importe quelle partie de l’identifiant.</li>
+  <li><strong>Toutes · Cancer · Sans cancer</strong> filtre selon l’étiquette du jeu de données. Les lignes portent une pastille rouge <em>Cancer</em> ou grise <em>Négatif</em>.</li>
+  <li>Le nombre d’images s’affiche dès que les dossiers ont été comptés. En attendant, la ligne indique <em>Comptage…</em>.</li>
+  <li>Au démarrage suivant, Luminor rouvre la dernière série consultée.</li>
+</ul>
+
+<h3 id="language">Langue de l’interface</h3>
+<p>Le bouton <strong>FR / EN</strong> (avec un globe) de la barre d’outils fait passer toute l’interface du français à l’anglais et inversement, sans recharger l’examen : libellés, aide, observations, projet de compte rendu et informations affichées sur l’image. Luminor mémorise votre choix ; au premier lancement, il suit la langue du navigateur.</p>
+<p>En français, Luminor applique les conventions habituelles : unités <strong>UH</strong>, virgule décimale (90,9 mm), fenêtre notée <strong>C</strong> (centre) et <strong>L</strong> (largeur), repères <strong>D/G</strong> (droite/gauche). Les noms donnés aux observations restent tels que vous les avez saisis.</p>
+
+<!-- ===================================================================== -->
+<h2 id="tour"><span class="num">3</span>L’interface</h2>
+<figure>
+  <img src="guide-assets/fr/overview.jpg" alt="Luminor avec la bibliothèque à gauche, une coupe axiale pulmonaire au centre et l’inspecteur à droite" width="800" height="360">
+  <figcaption>La bibliothèque, la visionneuse avec une coupe axiale pulmonaire, et l’inspecteur avec les préréglages de fenêtre, les coupes épaisses et le ciné.</figcaption>
+</figure>
+
+<div class="diagram" role="img" aria-label="Schéma de la fenêtre de Luminor avec ses zones numérotées">
+<svg viewBox="0 0 820 400" xmlns="http://www.w3.org/2000/svg" font-family="Inter, -apple-system, Segoe UI, sans-serif">
+  <rect x="1" y="1" width="818" height="398" rx="14" fill="var(--surface)" stroke="var(--sep)"/>
+  <rect x="12" y="12" width="150" height="376" rx="10" fill="var(--fill)"/>
+  <rect x="24" y="44" width="126" height="18" rx="6" fill="var(--fill)"/>
+  <g fill="var(--fill)"><rect x="24" y="98" width="126" height="26" rx="6"/><rect x="24" y="130" width="126" height="26" rx="6"/><rect x="24" y="162" width="126" height="26" rx="6"/><rect x="24" y="194" width="126" height="26" rx="6"/></g>
+  <rect x="24" y="98" width="126" height="26" rx="6" fill="var(--accent)" opacity=".85"/>
+  <rect x="172" y="12" width="478" height="36" rx="8" fill="var(--fill)"/>
+  <g fill="var(--text-3)"><rect x="300" y="22" width="60" height="16" rx="5"/><rect x="370" y="22" width="110" height="16" rx="5"/><rect x="490" y="22" width="100" height="16" rx="5"/></g>
+  <rect x="172" y="56" width="478" height="300" rx="8" fill="#000"/>
+  <ellipse cx="411" cy="210" rx="120" ry="90" fill="#3a3a3c"/>
+  <ellipse cx="370" cy="205" rx="42" ry="58" fill="#111"/><ellipse cx="452" cy="205" rx="42" ry="58" fill="#111"/>
+  <line x1="172" y1="208" x2="650" y2="208" stroke="var(--coronal)" stroke-width="1.2" opacity=".8"/>
+  <line x1="405" y1="56" x2="405" y2="356" stroke="var(--sagittal)" stroke-width="1.2" opacity=".8"/>
+  <g fill="#f5f5f7" font-size="10" font-weight="600"><text x="182" y="74">Axial</text><text x="182" y="87" fill="#aaa">Im 98 / 195</text><text x="640" y="74" text-anchor="end">C -600 L 1500</text><text x="182" y="346">-907 UH</text><text x="640" y="346" text-anchor="end">100 %</text></g>
+  <g fill="#ffd60a" font-size="11" font-weight="700"><text x="408" y="70" text-anchor="middle">A</text><text x="408" y="352" text-anchor="middle">P</text><text x="178" y="212">D</text><text x="644" y="212" text-anchor="end">G</text></g>
+  <rect x="172" y="364" width="478" height="24" rx="6" fill="var(--fill)"/>
+  <rect x="660" y="12" width="148" height="376" rx="10" fill="var(--fill)"/>
+  <g fill="var(--fill)"><rect x="670" y="24" width="128" height="64" rx="8"/><rect x="670" y="96" width="128" height="50" rx="8"/><rect x="670" y="154" width="128" height="34" rx="8"/><rect x="670" y="196" width="128" height="120" rx="8"/><rect x="670" y="324" width="128" height="54" rx="8"/></g>
+  <g font-size="12" font-weight="700" fill="#fff" text-anchor="middle">
+    <circle cx="87" cy="26" r="11" fill="var(--accent)"/><text x="87" y="30">1</text>
+    <circle cx="245" cy="30" r="11" fill="var(--accent)"/><text x="245" y="34">2</text>
+    <circle cx="530" cy="130" r="11" fill="var(--accent)"/><text x="530" y="134">3</text>
+    <circle cx="300" cy="78" r="11" fill="var(--accent)"/><text x="300" y="82">4</text>
+    <circle cx="411" cy="376" r="11" fill="var(--accent)"/><text x="411" y="380">5</text>
+    <circle cx="734" cy="256" r="11" fill="var(--accent)"/><text x="734" y="260">6</text>
+  </g>
+</svg>
+</div>
+<ul class="legend">
+  <li><span class="badge-n">1</span><span><strong>Bibliothèque</strong> : liste des séries, recherche, filtre par étiquette et bouton de comparaison.</span></li>
+  <li><span class="badge-n">2</span><span><strong>Barre d’outils</strong> : disposition, plan, outils, ciné, aide, affichage des panneaux.</span></li>
+  <li><span class="badge-n">3</span><span><strong>Visionneuse</strong> : une à trois vues d’image. La vue active a un contour bleu.</span></li>
+  <li><span class="badge-n">4</span><span><strong>Surimpression</strong> : plan, numéro d’image, position, fenêtre, coupe épaisse, UH et zoom.</span></li>
+  <li><span class="badge-n">5</span><span><strong>Barre d’état</strong> : UH, voxel et coordonnées patient sous le curseur.</span></li>
+  <li><span class="badge-n">6</span><span><strong>Inspecteur</strong> : fenêtre, coupe épaisse, ciné, observations et informations de la série.</span></li>
+</ul>
+
+<h3>La barre d’outils</h3>
+<table>
+  <thead><tr><th>Commande</th><th>Rôle</th></tr></thead>
+  <tbody>
+    <tr><td>Boutons de panneau (aux deux extrémités)</td><td>Afficher ou masquer la bibliothèque et l’inspecteur. Sur les petits écrans, les deux sont masqués au démarrage.</td></tr>
+    <tr><td>Disposition : Simple · MPR · Comparaison</td><td>Un seul plan, trois plans reliés, ou deux examens côte à côte (<kbd>L</kbd> pour passer de l’un à l’autre).</td></tr>
+    <tr><td>Synchronisé</td><td>Visible en disposition Comparaison. Synchronise le défilement, le zoom et le déplacement entre les deux examens (<kbd>K</kbd>).</td></tr>
+    <tr><td>Plan : Axial · Coronal · Sagittal</td><td>Plan affiché en dispositions Simple et Comparaison (<kbd>A</kbd> <kbd>C</kbd> <kbd>S</kbd>).</td></tr>
+    <tr><td>Outils</td><td>Action du bouton <em>gauche</em> de la souris : Réticule <kbd>X</kbd>, Fenêtrage <kbd>W</kbd>, Déplacer <kbd>H</kbd>, Zoom <kbd>Z</kbd>, Distance <kbd>M</kbd>, ROI elliptique <kbd>E</kbd>.</td></tr>
+    <tr><td>Lecture</td><td>Lance ou arrête le ciné (<kbd>Espace</kbd>).</td></tr>
+    <tr><td>?</td><td>Aide-mémoire clavier et souris, avec un lien vers ce guide.</td></tr>
+    <tr><td>FR / EN</td><td>Langue de l’interface : français ou anglais.</td></tr>
+  </tbody>
+</table>
+
+<h3>Lire les informations à l’écran</h3>
+<table>
+  <thead><tr><th>Coin</th><th>Affiche</th></tr></thead>
+  <tbody>
+    <tr><td>En haut à gauche</td><td>Nom et couleur du plan (<span class="dot" style="background:var(--axial)"></span>axial, <span class="dot" style="background:var(--coronal)"></span>coronal, <span class="dot" style="background:var(--sagittal)"></span>sagittal), numéro d’image (<em>Im</em>) et position de la coupe en mm (Z en axial, Y en coronal, X en sagittal). Une pastille <em>COMPARAISON</em> signale l’examen de comparaison.</td></tr>
+    <tr><td>En haut à droite</td><td>Centre (C) et largeur (L) de la fenêtre, <em>INV</em> si l’image est inversée, la coupe épaisse active (par exemple <em>MIP 10 mm</em>) et l’identifiant de la série.</td></tr>
+    <tr><td>En bas à gauche</td><td>Densité en UH et indices du voxel sous la souris.</td></tr>
+    <tr><td>En bas à droite</td><td>Niveau de zoom.</td></tr>
+    <tr><td>Bords (en jaune)</td><td>Orientation du patient : <strong>D/G</strong> droite/gauche, <strong>A/P</strong> antérieur/postérieur, <strong>S/I</strong> supérieur/inférieur. Comme sur toute console de radiologie, la droite du patient est à gauche de l’image axiale.</td></tr>
+  </tbody>
+</table>
+<div class="callout safety"><span class="ic">!</span><p>Vérifiez toujours les repères d’orientation avant de décrire une latéralité. Ils sont calculés à partir des balises DICOM d’orientation de chaque série. Si l’interface est en anglais, les repères deviennent <strong>R/L</strong> : <strong>R</strong> (<em>right</em>) = droite, <strong>L</strong> (<em>left</em>) = gauche.</p></div>
+
+<!-- ===================================================================== -->
+<h2 id="navigate"><span class="num">4</span>Défilement et ciné</h2>
+<p>Le défilement de la pile d’images est au cœur de la lecture d’un scanner. Il est donc toujours affecté à la molette, quel que soit l’outil sélectionné.</p>
+<table>
+  <thead><tr><th>Action</th><th>Résultat</th></tr></thead>
+  <tbody>
+    <tr><td>Molette</td><td>Une image par cran. Les pavés tactiles défilent de façon continue.</td></tr>
+    <tr><td><kbd>Maj</kbd> + molette</td><td>Cinq images par cran.</td></tr>
+    <tr><td><kbd>↑</kbd> <kbd>↓</kbd> (ou <kbd>←</kbd> <kbd>→</kbd>)</td><td>Une image. Ajoutez <kbd>Maj</kbd> pour cinq.</td></tr>
+    <tr><td><kbd>Page préc.</kbd> <kbd>Page suiv.</kbd></td><td>Dix images.</td></tr>
+    <tr><td><kbd>Origine</kbd> <kbd>Fin</kbd></td><td>Première ou dernière image.</td></tr>
+    <tr><td><kbd>Espace</kbd></td><td>Lance ou met en pause le ciné dans la vue active. La lecture reprend à la première image en fin de série.</td></tr>
+  </tbody>
+</table>
+<p>Réglez la vitesse du ciné (2 à 40 images par seconde) avec le curseur <strong>Vitesse</strong> de la carte <strong>Ciné</strong> de l’inspecteur. Le ciné et le clavier agissent sur la <em>vue active</em> : celle qui se trouve sous la souris, entourée de bleu.</p>
+
+<!-- ===================================================================== -->
+<h2 id="window"><span class="num">5</span>Fenêtrage</h2>
+<p>Une image de scanner contient bien plus de niveaux de gris qu’un écran ne peut en afficher. La <strong>fenêtre</strong> choisit la plage d’unités Hounsfield affichée : le <em>centre</em> (niveau) fixe le gris moyen et la <em>largeur</em> règle le contraste.</p>
+<h3>Préréglages</h3>
+<p>Les touches <kbd>1</kbd> à <kbd>5</kbd> fonctionnent aussi sur un clavier AZERTY, avec ou sans <kbd>Maj</kbd>, ainsi que sur le pavé numérique.</p>
+<table>
+  <thead><tr><th>Touche</th><th>Préréglage</th><th class="num-col">Centre / largeur (UH)</th><th>Usage</th></tr></thead>
+  <tbody>
+    <tr><td><kbd>1</kbd></td><td>Poumon</td><td class="num-col">−600 / 1500</td><td>Parenchyme, nodules, voies aériennes</td></tr>
+    <tr><td><kbd>2</kbd></td><td>Médiastin</td><td class="num-col">40 / 400</td><td>Cœur, vaisseaux, ganglions, tissus mous</td></tr>
+    <tr><td><kbd>3</kbd></td><td>Os</td><td class="num-col">400 / 1800</td><td>Côtes, rachis, fractures, lésions lytiques ou condensantes</td></tr>
+    <tr><td><kbd>4</kbd></td><td>Foie</td><td class="num-col">60 / 160</td><td>Lésions hépatiques peu contrastées</td></tr>
+    <tr><td><kbd>5</kbd></td><td>Cerveau</td><td class="num-col">40 / 80</td><td>Fenêtre étroite des tissus mous</td></tr>
+  </tbody>
+</table>
+<h3>Réglage libre</h3>
+<ul>
+  <li><strong>Clic droit glissé</strong> sur n’importe quelle image, quel que soit l’outil. Glissez <em>à gauche ou à droite</em> pour rétrécir ou élargir la fenêtre. Glissez <em>vers le bas ou vers le haut</em> pour monter ou baisser le niveau : l’image s’assombrit quand vous descendez. La sensibilité s’adapte à la largeur courante, ce qui facilite les réglages fins dans les fenêtres étroites.</li>
+  <li>Ou sélectionnez l’outil <strong>Fenêtrage</strong> (<kbd>W</kbd>) et utilisez le bouton gauche.</li>
+  <li>Ou saisissez des valeurs précises dans <strong>Centre</strong> et <strong>Largeur</strong> dans l’inspecteur.</li>
+  <li><kbd>I</kbd> inverse les niveaux de gris.</li>
+</ul>
+<p>La fenêtre s’applique à toutes les vues, y compris l’examen de comparaison : les deux sont toujours affichés de la même façon.</p>
+
+<!-- ===================================================================== -->
+<h2 id="mpr"><span class="num">6</span>MPR et réticule</h2>
+<figure>
+  <img src="guide-assets/fr/mpr.jpg" alt="Disposition MPR avec les vues axiale, coronale et sagittale, un réticule coloré et des MIP de 10 mm" width="800" height="360">
+  <figcaption>Disposition MPR : l’axial à gauche, le coronal et le sagittal à droite. Les lignes colorées montrent où les autres plans coupent chaque image. Ici, une coupe épaisse MIP de 10 mm est active.</figcaption>
+</figure>
+<p>Les reconstructions multiplanaires (MPR) recalculent des images coronales et sagittales à partir de la pile axiale, avec des proportions physiques exactes et la tête en haut.</p>
+<ol class="steps">
+  <li>Choisissez <strong>MPR</strong> dans le sélecteur de disposition, ou appuyez sur <kbd>L</kbd>.</li>
+  <li>Sélectionnez l’outil <strong>Réticule</strong> (<kbd>X</kbd>). Cliquez ou glissez dans une vue pour placer le réticule. Les deux autres vues se placent sur ce point.</li>
+  <li>Faites défiler une vue. La ligne correspondante se déplace dans les deux autres.</li>
+  <li><strong>Double-cliquez</strong> sur une vue pour l’agrandir. Double-cliquez à nouveau pour revenir aux trois vues.</li>
+</ol>
+<p>Les lignes du réticule prennent la couleur du plan qu’elles représentent : <span class="dot" style="background:var(--axial)"></span>bleu pour l’axial, <span class="dot" style="background:var(--coronal)"></span>vert pour le coronal, <span class="dot" style="background:var(--sagittal)"></span>orange pour le sagittal.</p>
+<div class="callout tip"><span class="ic">i</span><p>Pour lire toute une série dans un autre plan, appuyez sur <kbd>C</kbd> ou <kbd>S</kbd> : la disposition Simple passe en coronal ou en sagittal. <kbd>A</kbd> revient à l’axial.</p></div>
+
+<h3>Zoom et déplacement</h3>
+<ul>
+  <li><kbd>Ctrl</kbd> + molette (ou le pincement sur un pavé tactile) zoome autour de la position de la souris, de 25 % à 1200 %.</li>
+  <li>Le <strong>clic central glissé</strong> déplace l’image, quel que soit l’outil. Les outils <strong>Déplacer</strong> (<kbd>H</kbd>) et <strong>Zoom</strong> (<kbd>Z</kbd>) font de même avec le bouton gauche.</li>
+  <li><kbd>R</kbd> réinitialise le zoom et le déplacement.</li>
+</ul>
+
+<!-- ===================================================================== -->
+<h2 id="measure"><span class="num">7</span>Mesures</h2>
+<figure>
+  <img src="guide-assets/fr/measurements.jpg" alt="Fenêtre médiastinale agrandie avec une distance mesurée sur le cœur, une ROI elliptique avec ses statistiques en UH et un repère sur un corps vertébral" width="800" height="360">
+  <figcaption>Une distance mesurée sur le cœur (90,9 mm), une ROI elliptique avec moyenne ± écart-type, minimum/maximum et surface, et un repère sur un corps vertébral (187 UH).</figcaption>
+</figure>
+
+<h3>Mesure de densité</h3>
+<p>Survolez n’importe quelle image. La surimpression (en bas à gauche) et la barre d’état indiquent la <strong>densité en UH</strong> du voxel, ses indices et ses coordonnées patient en millimètres (convention LPS : +X vers la gauche du patient, +Y vers l’arrière, +Z vers le haut). La mesure lit toujours le voxel d’origine, même quand une coupe épaisse est affichée.</p>
+
+<h3>Distance</h3>
+<ol class="steps">
+  <li>Sélectionnez <strong>Distance</strong> (<kbd>M</kbd>).</li>
+  <li>Glissez d’un bord à l’autre de la structure. La distance en millimètres s’actualise pendant le tracé.</li>
+  <li>Relâchez pour l’enregistrer comme observation.</li>
+</ol>
+<p>Les distances tiennent compte de la taille réelle des pixels du plan. Elles restent donc exactes sur les reconstructions coronales et sagittales, où l’espacement des coupes diffère de la taille des pixels.</p>
+
+<h3>ROI elliptique</h3>
+<ol class="steps">
+  <li>Sélectionnez <strong>ROI elliptique</strong> (<kbd>E</kbd>).</li>
+  <li>Tracez le rectangle englobant de l’ellipse sur la région.</li>
+  <li>Relâchez. Luminor affiche la <strong>moyenne ± écart-type</strong>, le <strong>minimum / maximum</strong> en UH et la <strong>surface</strong>.</li>
+</ol>
+<div class="callout warn"><span class="ic">!</span><p>Les statistiques de ROI sont calculées sur l’image d’origine seule, jamais sur une coupe épaisse MIP, MinIP ou moyenne : les valeurs restent de vraies unités Hounsfield. Placez la ROI bien à l’intérieur de la structure pour éviter l’effet de volume partiel avec les tissus voisins.</p></div>
+
+<h3>Repères</h3>
+<p>Appuyez sur <kbd>B</kbd> (ou sur le bouton <strong>Repère</strong>) pour poser un repère à la position du réticule. Il enregistre la densité en UH en ce point. C’est pratique pour signaler une lésion à revoir.</p>
+
+<h3>Sélectionner et supprimer</h3>
+<p>Les mesures n’apparaissent que sur l’image où elles ont été tracées. Cliquez sur une mesure (avec l’outil réticule, distance ou ellipse) pour la sélectionner : elle devient bleu clair. <kbd>Suppr</kbd> efface l’observation sélectionnée ; <kbd>Échap</kbd> la désélectionne ou annule un tracé en cours.</p>
+
+<!-- ===================================================================== -->
+<h2 id="slab"><span class="num">8</span>MIP et coupes épaisses</h2>
+<p>Une coupe épaisse combine plusieurs images voisines en une seule, centrée sur l’image courante. Choisissez le mode dans la carte <strong>Coupe épaisse</strong> de l’inspecteur, ou appuyez sur <kbd>T</kbd> pour passer d’un mode à l’autre.</p>
+<table>
+  <thead><tr><th>Mode</th><th>Conserve</th><th>Indications</th></tr></thead>
+  <tbody>
+    <tr><td>MIP</td><td>La valeur la plus élevée dans l’épaisseur</td><td>Nodules pulmonaires (ils se distinguent des vaisseaux), vaisseaux, calcifications</td></tr>
+    <tr><td>MinIP</td><td>La valeur la plus basse</td><td>Voies aériennes, emphysème, piégeage aérique</td></tr>
+    <tr><td>Moy.</td><td>La valeur moyenne</td><td>Réduction du bruit sur les coupes fines</td></tr>
+  </tbody>
+</table>
+<p>Réglez l’épaisseur de 2 à 40 mm avec le curseur ou avec <kbd>+</kbd> / <kbd>−</kbd>. La surimpression indique l’épaisseur réellement utilisée, arrondie à un nombre entier de coupes. Les coupes épaisses fonctionnent dans tous les plans et dans toutes les vues.</p>
+<div class="callout tip"><span class="ic">i</span><p>Une bonne méthode de recherche de nodules : fenêtre pulmonaire (<kbd>1</kbd>), MIP de 8 à 10 mm (<kbd>T</kbd>), puis défilement lent de l’apex à la base. Toute image arrondie qui ne se raccorde pas à un vaisseau au fil du défilement mérite d’être revue sur les coupes fines.</p></div>
+
+<!-- ===================================================================== -->
+<h2 id="compare"><span class="num">9</span>Comparaison</h2>
+<figure>
+  <img src="guide-assets/fr/compare.jpg" alt="Disposition Comparaison avec deux coupes axiales pulmonaires côte à côte et le bouton Synchronisé dans la barre d’outils" width="800" height="360">
+  <figcaption>Disposition Comparaison. L’examen courant est à gauche ; l’examen de comparaison, marqué <em>COMPARAISON</em>, est à droite. Le bouton <em>Synchronisé</em> de la barre d’outils les maintient alignés.</figcaption>
+</figure>
+<ol class="steps">
+  <li>Dans la bibliothèque, survolez la série à comparer et cliquez sur le bouton <strong>⧉</strong> de sa ligne.</li>
+  <li>Luminor passe en disposition <strong>Comparaison</strong>. L’examen de comparaison s’ouvre à la même hauteur relative dans le corps que votre image courante.</li>
+  <li>Faites défiler l’une ou l’autre vue. Tant que <strong>Synchronisé</strong> est actif, l’autre suit de la même distance en millimètres, même si les deux examens n’ont pas le même espacement de coupes. Le zoom et le déplacement sont aussi reproduits.</li>
+</ol>
+<h3>Aligner deux examens</h3>
+<p>Un patient n’est jamais positionné deux fois exactement de la même façon. Alignez donc une fois les examens sur un repère anatomique (par exemple la carène ou une lésion) :</p>
+<ol class="steps">
+  <li>Appuyez sur <kbd>K</kbd> pour <strong>désynchroniser</strong>.</li>
+  <li>Amenez chaque vue sur le même repère.</li>
+  <li>Appuyez de nouveau sur <kbd>K</kbd>. Luminor enregistre le décalage entre les deux examens, qui défilent désormais ensemble à des niveaux correspondants.</li>
+</ol>
+<p>Changer de plan recentre l’examen de comparaison : réalignez après être passé de l’axial au coronal ou au sagittal. Les mesures et les repères se font sur l’examen courant (vue de gauche).</p>
+
+<!-- ===================================================================== -->
+<h2 id="findings"><span class="num">10</span>Observations et compte rendu</h2>
+<figure>
+  <img src="guide-assets/fr/findings.jpg" alt="Liste des observations dans l’inspecteur : une ROI cardiaque, une largeur cardiaque et un repère vertébral" width="800" height="360">
+  <figcaption>Chaque mesure et chaque repère deviennent une observation, avec sa valeur et sa localisation exacte.</figcaption>
+</figure>
+<h3>Gérer les observations</h3>
+<ul>
+  <li><strong>Renommer</strong> : cliquez sur le nom, saisissez-en un nouveau (par exemple « Nodule LSD ») et appuyez sur <kbd>Entrée</kbd>. Le nom s’affiche aussi sur l’image.</li>
+  <li><strong>Y aller</strong> : cliquez sur une observation pour afficher directement son image. Le réticule se centre dessus et Luminor change de plan si nécessaire.</li>
+  <li><strong>Supprimer</strong> : survolez l’observation et cliquez sur l’icône de corbeille, ou sélectionnez-la et appuyez sur <kbd>Suppr</kbd>.</li>
+  <li>Les observations sont <strong>enregistrées automatiquement</strong> sur votre ordinateur, un fichier par série dans <code>Claude-Radio/data/findings/</code>. Elles réapparaissent quand vous rouvrez la série.</li>
+</ul>
+
+<h3>Projet de compte rendu</h3>
+<figure>
+  <img src="guide-assets/fr/report.jpg" alt="Fenêtre du projet de compte rendu avec un texte Markdown modifiable et les boutons Copier et Télécharger" width="800" height="360">
+  <figcaption>Le projet de compte rendu est un texte Markdown que vous pouvez modifier avant de le copier ou de le télécharger.</figcaption>
+</figure>
+<p>Cliquez sur <strong>Compte rendu</strong> dans la carte <strong>Observations</strong>. Luminor rédige un projet comprenant les informations de la série, une ligne de technique, la liste numérotée de vos observations avec valeurs et localisations, et une section <em>Conclusion</em> vide. Le projet est rédigé dans la langue de l’interface. Complétez vous-même le temps d’injection, le protocole et la conclusion. Cliquez ensuite sur <strong>Copier</strong> pour le coller dans votre compte rendu, ou sur <strong>Télécharger .md</strong> pour l’enregistrer (fichier <code>compte-rendu_….md</code>).</p>
+
+<h3>Images clés</h3>
+<p><strong>Image clé</strong> enregistre la vue active au format PNG, avec les mesures, les informations affichées, les repères d’orientation et la mention « usage recherche uniquement ». Le nom du fichier contient la série, le plan et le numéro d’image, par exemple <code>key-image_0015ceb8_axial_98.png</code>.</p>
+
+<!-- ===================================================================== -->
+<h2 id="workflow"><span class="num">11</span>Une routine de lecture</h2>
+<p>Une routine systématique proposée pour un scanner thoracique, à adapter à votre pratique.</p>
+<ol class="steps">
+  <li><strong>Poumons</strong> : appuyez sur <kbd>1</kbd>, faites défiler de l’apex à la base, puis recommencez avec une MIP de 10 mm (<kbd>T</kbd>) pour les nodules. Utilisez la MinIP pour les voies aériennes.</li>
+  <li><strong>Médiastin</strong> : appuyez sur <kbd>2</kbd>. Examinez le cœur, les gros vaisseaux, l’œsophage et les aires ganglionnaires. Mesurez les ganglions selon leur petit axe (<kbd>M</kbd>).</li>
+  <li><strong>Os</strong> : appuyez sur <kbd>3</kbd>. Lisez le rachis en sagittal (<kbd>S</kbd>), le sternum et les côtes en axial et en coronal.</li>
+  <li><strong>Étage abdominal supérieur</strong> : appuyez sur <kbd>4</kbd> pour le foie, puis examinez les surrénales, les reins et la rate.</li>
+  <li><strong>Caractériser</strong> : confirmez chaque anomalie en MPR, mesurez-la et placez des ROI pour en vérifier la densité (graisse, liquide, tissu, calcium).</li>
+  <li><strong>Comparer</strong> : ouvrez l’examen antérieur, alignez-le et déterminez si les lésions sont nouvelles, stables ou modifiées.</li>
+  <li><strong>Rédiger</strong> : nommez vos observations, enregistrez les images clés, puis ouvrez <strong>Compte rendu</strong> et complétez la conclusion.</li>
+</ol>
+
+<!-- ===================================================================== -->
+<h2 id="shortcuts"><span class="num">12</span>Clavier et souris</h2>
+<p>Appuyez sur <kbd>?</kbd> (ou <kbd>/</kbd>) dans Luminor pour afficher cette liste. Les raccourcis sont ignorés pendant la saisie dans un champ de texte : cliquez sur une image pour revenir à la visionneuse.</p>
+<table>
+  <thead><tr><th>Entrée</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>Molette · <kbd>↑</kbd> <kbd>↓</kbd></td><td>Image précédente / suivante</td></tr>
+    <tr><td><kbd>Maj</kbd> + molette ou flèches</td><td>Cinq images</td></tr>
+    <tr><td><kbd>Page préc.</kbd> / <kbd>Page suiv.</kbd></td><td>Dix images</td></tr>
+    <tr><td><kbd>Origine</kbd> / <kbd>Fin</kbd></td><td>Première / dernière image</td></tr>
+    <tr><td><kbd>Espace</kbd></td><td>Lecture / pause du ciné</td></tr>
+    <tr><td>Clic droit glissé</td><td>Fenêtrage</td></tr>
+    <tr><td>Clic central glissé</td><td>Déplacement</td></tr>
+    <tr><td><kbd>Ctrl</kbd> + molette</td><td>Zoom à la position de la souris</td></tr>
+    <tr><td>Double-clic</td><td>Agrandir / restaurer la vue</td></tr>
+    <tr><td><kbd>1</kbd> – <kbd>5</kbd></td><td>Fenêtre poumon · médiastin · os · foie · cerveau</td></tr>
+    <tr><td><kbd>I</kbd></td><td>Inverser</td></tr>
+    <tr><td><kbd>R</kbd></td><td>Réinitialiser le zoom et le déplacement</td></tr>
+    <tr><td><kbd>A</kbd> · <kbd>C</kbd> · <kbd>S</kbd></td><td>Axial · coronal · sagittal</td></tr>
+    <tr><td><kbd>L</kbd></td><td>Changer de disposition : Simple → MPR → Comparaison</td></tr>
+    <tr><td><kbd>T</kbd></td><td>Coupe épaisse : aucune → MIP → MinIP → moyenne</td></tr>
+    <tr><td><kbd>+</kbd> / <kbd>−</kbd></td><td>Épaisseur de coupe ± 2 mm</td></tr>
+    <tr><td><kbd>X</kbd> · <kbd>W</kbd> · <kbd>H</kbd> · <kbd>Z</kbd></td><td>Outil réticule · fenêtrage · déplacement · zoom</td></tr>
+    <tr><td><kbd>M</kbd> · <kbd>E</kbd></td><td>Outil distance · ROI elliptique</td></tr>
+    <tr><td><kbd>B</kbd></td><td>Repère à la position du réticule</td></tr>
+    <tr><td><kbd>Suppr</kbd></td><td>Supprimer l’observation sélectionnée</td></tr>
+    <tr><td><kbd>K</kbd></td><td>Synchroniser / désynchroniser la comparaison</td></tr>
+    <tr><td><kbd>Échap</kbd></td><td>Annuler le tracé / désélectionner</td></tr>
+  </tbody>
+</table>
+
+<!-- ===================================================================== -->
+<h2 id="reference"><span class="num">13</span>Valeurs de référence en UH</h2>
+<p>Valeurs habituelles sans injection de produit de contraste, données à titre indicatif pour la mesure de densité et la ROI. Elles varient selon l’appareil, le protocole, l’injection et le bruit.</p>
+<table>
+  <thead><tr><th>Tissu ou matériau</th><th class="num-col">UH habituelles</th></tr></thead>
+  <tbody>
+    <tr><td>Air</td><td class="num-col">≈ −1000</td></tr>
+    <tr><td>Poumon aéré</td><td class="num-col">−900 à −500</td></tr>
+    <tr><td>Graisse</td><td class="num-col">−120 à −60</td></tr>
+    <tr><td>Eau, liquide simple</td><td class="num-col">0 à 20</td></tr>
+    <tr><td>Tissus mous, muscle</td><td class="num-col">20 à 60</td></tr>
+    <tr><td>Sang non injecté</td><td class="num-col">30 à 45</td></tr>
+    <tr><td>Hémorragie aiguë</td><td class="num-col">50 à 90</td></tr>
+    <tr><td>Calcification, os cortical</td><td class="num-col">&gt; 300, jusqu’à 2000 et plus</td></tr>
+  </tbody>
+</table>
+
+<!-- ===================================================================== -->
+<h2 id="troubleshooting"><span class="num">14</span>Dépannage</h2>
+<table>
+  <thead><tr><th>Problème</th><th>Solution</th></tr></thead>
+  <tbody>
+    <tr><td>La page ne s’affiche pas</td><td>Le serveur n’est pas lancé. Exécutez <code>.\start.ps1</code> et gardez sa fenêtre ouverte.</td></tr>
+    <tr><td>« Port already in use »</td><td>Luminor est probablement déjà lancé : ouvrez <a href="http://127.0.0.1:8770/">127.0.0.1:8770</a>. Sinon, démarrez-le avec <code>-Port 9000</code>.</td></tr>
+    <tr><td>« Impossible d’ouvrir la série »</td><td>Le dossier doit contenir des fichiers <code>.dcm</code> lisibles d’une seule série. Consultez l’erreur dans la fenêtre PowerShell.</td></tr>
+    <tr><td>L’ouverture est lente</td><td>La première ouverture lit tous les fichiers DICOM (quelques secondes par examen). Les trois derniers examens restent en mémoire et se rouvrent rapidement.</td></tr>
+    <tr><td>L’image est toute noire ou toute blanche</td><td>La fenêtre ne correspond pas au tissu. Appuyez sur <kbd>1</kbd> ou <kbd>2</kbd>.</td></tr>
+    <tr><td>Les touches ne font rien</td><td>Un champ de texte a le focus (recherche, valeurs de fenêtre, nom d’observation). Cliquez sur une image.</td></tr>
+    <tr><td>L’interface est en anglais</td><td>Cliquez sur le bouton <strong>EN</strong> de la barre d’outils pour passer en français.</td></tr>
+    <tr><td>Le défilement saute des images</td><td>Certaines souris envoient de grands pas de molette. Utilisez les flèches pour avancer image par image.</td></tr>
+    <tr><td>« Impossible d’enregistrer les observations »</td><td>Le serveur s’est arrêté pendant votre travail. Relancez-le. Les observations antérieures étaient déjà enregistrées.</td></tr>
+    <tr><td>Le navigateur ralentit</td><td>Chaque examen occupe environ 100 Mo de mémoire, et la comparaison en garde deux. Fermez les autres onglets gourmands ou rechargez la page.</td></tr>
+  </tbody>
+</table>
+
+<!-- ===================================================================== -->
+<h2 id="limits"><span class="num">15</span>Confidentialité et limites</h2>
+<ul>
+  <li><strong>Fonctionnement local.</strong> Le serveur n’accepte que les connexions de cet ordinateur (127.0.0.1). Les images et les observations n’en sortent jamais. La seule requête externe concerne la police Inter, chargée depuis Google Fonts ; sans connexion internet, Luminor utilise la police du système.</li>
+  <li><strong>Pas d’usage diagnostique.</strong> Luminor n’a été ni validé ni certifié comme dispositif médical. Utilisez-le pour la recherche, l’enseignement et l’exploration.</li>
+  <li><strong>Données.</strong> Luminor lit des séries de scanner stockées sous forme de dossiers de fichiers DICOM. Il ne se connecte pas à un PACS et ne prend pas en charge les formats multi-images ou compressés que pydicom ne sait pas décoder.</li>
+  <li><strong>Géométrie.</strong> Les reconstructions supposent une acquisition axiale standard avec des coupes régulièrement espacées, ce qui est le cas d’un scanner thoracique courant. Vérifiez les repères d’orientation sur les séries inhabituelles.</li>
+  <li><strong>Comptes rendus.</strong> Le projet de compte rendu ne reprend que ce que vous avez mesuré. Le contexte clinique, les détails techniques et la conclusion restent toujours à votre charge.</li>
+</ul>
+
+<footer class="doc">Guide utilisateur Luminor · <a class="app-link" href="/" data-remote-label="Retour à la présentation" data-remote-href="index-fr.html">Retour à Luminor</a> · Imprimez cette page (<kbd>Ctrl</kbd> + <kbd>P</kbd>) pour l’enregistrer en PDF.</footer>
+</main>
+</div>
+<script src="guide.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# Runtime data (saved findings may describe patient studies)
+data/
+
+# Never commit imaging data
+*.dcm
+*.npy
+*.npz
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

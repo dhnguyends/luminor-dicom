@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luminor — CT viewer for the way radiologists read</title>
+<meta name="description" content="Luminor is an open-source, local CT viewer built around the seven actions radiologists use most: scrolling, windowing, MPR, measurements, MIP slabs, comparison and reporting.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="fr" href="index-fr.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="intro.css">
+</head>
+<body>
+<nav class="nav" aria-label="Main">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="favicon.svg" alt="">Luminor</a>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#start">Get started</a>
+      <a href="#docs">Documentation</a>
+      <a href="https://github.com/dhnguyends/luminor-dicom">GitHub</a>
+    </div>
+    <div class="lang" aria-label="Language"><a href="index.html" hreflang="en" aria-current="page">EN</a><a href="index-fr.html" hreflang="fr">FR</a></div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Open-source CT viewer</div>
+    <h1>Built around how radiologists actually read.</h1>
+    <p class="lede">Luminor puts the seven things a radiologist does all day at the tip of a key: scroll, window, reformat, measure, project, compare and report. Fast, local and calm on the eyes.</p>
+    <div class="cta">
+      <a class="btn primary" href="#start">Get started</a>
+      <a class="btn secondary" href="guide.html">Read the user guide</a>
+    </div>
+    <figure class="hero-shot">
+      <img src="guide-assets/overview.jpg" alt="Luminor showing the series library, an axial chest CT in lung window and the inspector with window presets" width="800" height="360">
+    </figure>
+  </div>
+</header>
+
+<section class="alt" id="features">
+  <div class="wrap center">
+    <h2>Seven features. One reading routine.</h2>
+    <p class="section-lede">A radiologist reads 40 to 80 CT studies a day, and the same handful of actions make up nearly all of that work. Luminor was designed from that routine, starting with what a radiologist needs most.</p>
+    <div class="grid7">
+      <a class="tile" href="#f1"><span class="n">01</span><b>Scroll &amp; cine</b><span>Glide through hundreds of images, or play them as a movie.</span></a>
+      <a class="tile" href="#f2"><span class="n">02</span><b>Window &amp; level</b><span>Lung, mediastinum, bone, liver, brain: one key each.</span></a>
+      <a class="tile" href="#f3"><span class="n">03</span><b>MPR</b><span>Axial, coronal and sagittal linked by one crosshair.</span></a>
+      <a class="tile" href="#f4"><span class="n">04</span><b>Measurements</b><span>HU probe, distances in mm, ellipse ROI statistics.</span></a>
+      <a class="tile" href="#f5"><span class="n">05</span><b>MIP &amp; slabs</b><span>MIP, MinIP and average slabs from 2 to 40 mm.</span></a>
+      <a class="tile" href="#f6"><span class="n">06</span><b>Comparison</b><span>Current and prior side by side, synced in millimetres.</span></a>
+      <a class="tile" href="#f7"><span class="n">07</span><b>Findings &amp; reports</b><span>Named findings, key images and a report draft.</span></a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <article class="feature" id="f1">
+      <div class="text">
+        <div class="num">01 · Scroll &amp; cine</div>
+        <h3>Scrolling is the reading.</h3>
+        <p class="need"><strong>In the reading room:</strong> most of a radiologist's time goes into scrolling through the stack, following a vessel, a bronchus or a nodule from image to image. If scrolling lags, nothing else matters.</p>
+        <ul>
+          <li>The mouse wheel always scrolls, whatever tool is active. <kbd>Shift</kbd> moves five images at a time.</li>
+          <li>Cine playback at 2 to 40 images per second with <kbd>Space</kbd>.</li>
+          <li>Image number and slice position in millimetres always on screen.</li>
+        </ul>
+      </div>
+      <div class="card keys">
+        <kbd>Wheel</kbd><span>Previous / next image</span>
+        <kbd>Shift</kbd><span>+ wheel: five images</span>
+        <kbd>Page ↑↓</kbd><span>Ten images</span>
+        <kbd>Home / End</kbd><span>First / last image</span>
+        <kbd>Space</kbd><span>Play / pause cine</span>
+      </div>
+    </article>
+
+    <article class="feature flip" id="f2">
+      <div class="text">
+        <div class="num">02 · Window &amp; level</div>
+        <h3>Every tissue, one key away.</h3>
+        <p class="need"><strong>In the reading room:</strong> every CT is read at least three times, in lung, soft-tissue and bone windows, and the window is adjusted dozens of times per study.</p>
+        <ul>
+          <li>Right-drag anywhere for window and level, with any tool selected.</li>
+          <li>Presets on <kbd>1</kbd>–<kbd>5</kbd>: lung, mediastinum, bone, liver, brain. They also work on AZERTY keyboards.</li>
+          <li>Exact centre and width entry, and invert with <kbd>I</kbd>.</li>
+        </ul>
+      </div>
+      <div class="card keys">
+        <kbd>1</kbd><span>Lung · C −600 / W 1500</span>
+        <kbd>2</kbd><span>Mediastinum · C 40 / W 400</span>
+        <kbd>3</kbd><span>Bone · C 400 / W 1800</span>
+        <kbd>4</kbd><span>Liver · C 60 / W 160</span>
+        <kbd>5</kbd><span>Brain · C 40 / W 80</span>
+      </div>
+    </article>
+
+    <article class="feature" id="f3">
+      <div class="text">
+        <div class="num">03 · Multiplanar reconstruction</div>
+        <h3>Three planes, one point in space.</h3>
+        <p class="need"><strong>In the reading room:</strong> a finding is confirmed, measured and located in coronal and sagittal planes, not on axial images alone.</p>
+        <ul>
+          <li>Coronal and sagittal views rebuilt with true physical proportions, head at the top.</li>
+          <li>Click with the crosshair to move all three planes to the same point.</li>
+          <li>Colour-coded planes and orientation letters calculated from the DICOM tags.</li>
+        </ul>
+      </div>
+      <img src="guide-assets/mpr.jpg" alt="MPR layout with axial, coronal and sagittal panes and a coloured crosshair" width="800" height="360" loading="lazy">
+    </article>
+
+    <article class="feature flip" id="f4">
+      <div class="text">
+        <div class="num">04 · Measurements</div>
+        <h3>Numbers you can report.</h3>
+        <p class="need"><strong>In the reading room:</strong> nodule size drives follow-up recommendations, and a lesion's density tells cyst from fat, soft tissue or calcium.</p>
+        <ul>
+          <li>Live Hounsfield value under the cursor, with patient coordinates.</li>
+          <li>Distances in millimetres from the true pixel spacing, including on reformats.</li>
+          <li>Ellipse ROI with mean ± SD, min / max and area, computed on original images.</li>
+        </ul>
+      </div>
+      <img src="guide-assets/measurements.jpg" alt="Length across the heart, an ellipse ROI with HU statistics and a marker on a vertebral body" width="800" height="360" loading="lazy">
+    </article>
+
+    <article class="feature" id="f5">
+      <div class="text">
+        <div class="num">05 · MIP &amp; slabs</div>
+        <h3>See the nodule, not the vessel.</h3>
+        <p class="need"><strong>In the reading room:</strong> maximum intensity projections make small nodules stand out from vessels; minimum intensity projections bring out airways and emphysema.</p>
+        <ul>
+          <li>MIP, MinIP and average slabs from 2 to 40 mm, in every plane.</li>
+          <li>Cycle modes with <kbd>T</kbd>; adjust thickness with <kbd>+</kbd> / <kbd>−</kbd>.</li>
+          <li>Measurements always read the original voxels, never the projection.</li>
+        </ul>
+      </div>
+      <div class="card keys">
+        <kbd>MIP</kbd><span>Nodules, vessels, calcifications</span>
+        <kbd>MinIP</kbd><span>Airways, emphysema, air trapping</span>
+        <kbd>Avg</kbd><span>Lower noise on thin images</span>
+        <kbd>T</kbd><span>Cycle Off → MIP → MinIP → Avg</span>
+      </div>
+    </article>
+
+    <article class="feature flip" id="f6">
+      <div class="text">
+        <div class="num">06 · Comparison</div>
+        <h3>New, stable or growing?</h3>
+        <p class="need"><strong>In the reading room:</strong> for a follow-up CT, the most important question is how today compares with the prior study.</p>
+        <ul>
+          <li>Two studies side by side with the same window.</li>
+          <li>Scrolling linked in millimetres, even when slice spacing differs; zoom and pan mirrored.</li>
+          <li>Align once on a landmark with <kbd>K</kbd>, then read both together.</li>
+        </ul>
+      </div>
+      <img src="guide-assets/compare.jpg" alt="Two axial chest CT studies side by side in compare layout" width="800" height="360" loading="lazy">
+    </article>
+
+    <article class="feature" id="f7">
+      <div class="text">
+        <div class="num">07 · Findings &amp; reports</div>
+        <h3>From viewing to reporting.</h3>
+        <p class="need"><strong>In the reading room:</strong> every finding needs a name, a value and a location that a colleague or a tumour board can find again.</p>
+        <ul>
+          <li>Measurements and markers become named findings, saved automatically.</li>
+          <li>One click jumps back to any finding, in the right plane.</li>
+          <li>A Markdown report draft and annotated key images in PNG.</li>
+        </ul>
+      </div>
+      <img src="guide-assets/findings.jpg" alt="Findings list with a heart ROI, a cardiac width and a vertebral body marker" width="800" height="360" loading="lazy">
+    </article>
+  </div>
+</section>
+
+<section class="alt" id="start">
+  <div class="wrap">
+    <h2>Get started</h2>
+    <p class="section-lede">Luminor is a small Python server plus a browser app. It runs entirely on your computer.</p>
+    <div class="steps3">
+      <div class="step">
+        <b>1 · Install</b>
+        <p>Python 3.10+ with NumPy and pydicom.</p>
+<pre>git clone https://github.com/dhnguyends/luminor-dicom.git
+cd luminor-dicom
+pip install -r requirements.txt</pre>
+      </div>
+      <div class="step">
+        <b>2 · Point it at your scans</b>
+        <p>A folder with one sub-folder of <code>.dcm</code> files per CT series.</p>
+<pre>python server.py --data /path/to/series</pre>
+      </div>
+      <div class="step">
+        <b>3 · Read</b>
+        <p>Open the viewer in Chrome, Edge, Safari or Firefox, then press <kbd>?</kbd> for shortcuts.</p>
+<pre>http://127.0.0.1:8770/</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="docs">
+  <div class="wrap">
+    <h2>Documentation</h2>
+    <p class="section-lede">An illustrated guide to every feature, with a suggested reading routine, an HU reference table and troubleshooting.</p>
+    <div class="docs">
+      <a class="doc" href="guide.html"><span class="tag">English</span><b>User Guide</b><span>Reading CT with Luminor, step by step.</span></a>
+      <a class="doc" href="guide-fr.html" hreflang="fr" lang="fr"><span class="tag">Français</span><b>Guide utilisateur</b><span>Lire un scanner avec Luminor, pas à pas.</span></a>
+      <a class="doc" href="https://github.com/dhnguyends/luminor-dicom"><span class="tag">Source</span><b>GitHub</b><span>Code, architecture and API in the README.</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="center">
+  <div class="wrap">
+    <div class="notice" role="note"><span class="ic">!</span><p><strong>Research and education use only.</strong> Luminor is not a certified medical device and must not be used for diagnostic or treatment decisions.</p></div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <span>Luminor · Open-source CT viewer</span>
+    <span><a href="guide.html">User guide</a> · <a href="guide-fr.html" hreflang="fr">Guide en français</a> · <a href="https://github.com/dhnguyends/luminor-dicom">GitHub</a></span>
+  </div>
+</footer>
+</body>
+</html>

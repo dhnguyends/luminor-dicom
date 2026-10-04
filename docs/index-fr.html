@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luminor — la visionneuse de scanner pensée pour la lecture radiologique</title>
+<meta name="description" content="Luminor est une visionneuse de scanner open source qui fonctionne en local, conçue autour des sept gestes les plus fréquents du radiologue : défilement, fenêtrage, MPR, mesures, MIP, comparaison et compte rendu.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="en" href="index.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="intro.css">
+</head>
+<body>
+<nav class="nav" aria-label="Navigation principale">
+  <div class="wrap">
+    <a class="brand" href="index-fr.html"><img src="favicon.svg" alt="">Luminor</a>
+    <div class="links">
+      <a href="#features">Fonctionnalités</a>
+      <a href="#start">Démarrer</a>
+      <a href="#docs">Documentation</a>
+      <a href="https://github.com/dhnguyends/luminor-dicom">GitHub</a>
+    </div>
+    <div class="lang" aria-label="Langue"><a href="index.html" hreflang="en">EN</a><a href="index-fr.html" hreflang="fr" aria-current="page">FR</a></div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Visionneuse de scanner open source</div>
+    <h1>Pensée pour la façon dont les radiologues lisent.</h1>
+    <p class="lede">Luminor met à portée de touche les sept gestes que le radiologue répète toute la journée : défiler, fenêtrer, reconstruire, mesurer, projeter, comparer et rédiger. Rapide, local et reposant pour les yeux.</p>
+    <div class="cta">
+      <a class="btn primary" href="#start">Démarrer</a>
+      <a class="btn secondary" href="guide-fr.html">Lire le guide utilisateur</a>
+    </div>
+    <figure class="hero-shot">
+      <img src="guide-assets/fr/overview.jpg" alt="Luminor avec la bibliothèque de séries, une coupe axiale de scanner thoracique en fenêtre pulmonaire et l’inspecteur" width="800" height="360">
+    </figure>
+  </div>
+</header>
+
+<section class="alt" id="features">
+  <div class="wrap center">
+    <h2>Sept fonctions. Une routine de lecture.</h2>
+    <p class="section-lede">Un radiologue lit de 40 à 80 scanners par jour, et une poignée de gestes représente l’essentiel de ce travail. Luminor a été conçu à partir de cette routine, en commençant par ce dont le radiologue a le plus besoin.</p>
+    <div class="grid7">
+      <a class="tile" href="#f1"><span class="n">01</span><b>Défilement et ciné</b><span>Parcourez des centaines d’images, ou lisez-les comme un film.</span></a>
+      <a class="tile" href="#f2"><span class="n">02</span><b>Fenêtrage</b><span>Poumon, médiastin, os, foie, cerveau : une touche chacun.</span></a>
+      <a class="tile" href="#f3"><span class="n">03</span><b>MPR</b><span>Axial, coronal et sagittal reliés par un même réticule.</span></a>
+      <a class="tile" href="#f4"><span class="n">04</span><b>Mesures</b><span>Densité en UH, distances en mm, statistiques de ROI.</span></a>
+      <a class="tile" href="#f5"><span class="n">05</span><b>MIP et coupes épaisses</b><span>MIP, MinIP et moyenne de 2 à 40 mm.</span></a>
+      <a class="tile" href="#f6"><span class="n">06</span><b>Comparaison</b><span>Examen actuel et antérieur côte à côte, synchronisés en millimètres.</span></a>
+      <a class="tile" href="#f7"><span class="n">07</span><b>Observations et compte rendu</b><span>Observations nommées, images clés et projet de compte rendu.</span></a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <article class="feature" id="f1">
+      <div class="text">
+        <div class="num">01 · Défilement et ciné</div>
+        <h3>Lire, c’est défiler.</h3>
+        <p class="need"><strong>En salle de lecture :</strong> l’essentiel du temps du radiologue passe à faire défiler la pile d’images, en suivant un vaisseau, une bronche ou un nodule d’image en image. Si le défilement est lent, le reste ne compte plus.</p>
+        <ul>
+          <li>La molette fait toujours défiler, quel que soit l’outil actif. <kbd>Maj</kbd> avance de cinq images.</li>
+          <li>Ciné de 2 à 40 images par seconde avec <kbd>Espace</kbd>.</li>
+          <li>Numéro d’image et position de la coupe en millimètres toujours affichés.</li>
+        </ul>
+      </div>
+      <div class="card keys">
+        <kbd>Molette</kbd><span>Image précédente / suivante</span>
+        <kbd>Maj</kbd><span>+ molette : cinq images</span>
+        <kbd>Page ↑↓</kbd><span>Dix images</span>
+        <kbd>Origine / Fin</kbd><span>Première / dernière image</span>
+        <kbd>Espace</kbd><span>Lecture / pause du ciné</span>
+      </div>
+    </article>
+
+    <article class="feature flip" id="f2">
+      <div class="text">
+        <div class="num">02 · Fenêtrage</div>
+        <h3>Chaque tissu à une touche.</h3>
+        <p class="need"><strong>En salle de lecture :</strong> chaque scanner est lu au moins trois fois, en fenêtres pulmonaire, tissus mous et osseuse, et la fenêtre est ajustée des dizaines de fois par examen.</p>
+        <ul>
+          <li>Clic droit glissé n’importe où pour régler la fenêtre, quel que soit l’outil.</li>
+          <li>Préréglages sur <kbd>1</kbd>–<kbd>5</kbd> : poumon, médiastin, os, foie, cerveau, y compris sur clavier AZERTY.</li>
+          <li>Saisie exacte du centre et de la largeur ; inversion avec <kbd>I</kbd>.</li>
+        </ul>
+      </div>
+      <div class="card keys">
+        <kbd>1</kbd><span>Poumon · C −600 / L 1500</span>
+        <kbd>2</kbd><span>Médiastin · C 40 / L 400</span>
+        <kbd>3</kbd><span>Os · C 400 / L 1800</span>
+        <kbd>4</kbd><span>Foie · C 60 / L 160</span>
+        <kbd>5</kbd><span>Cerveau · C 40 / L 80</span>
+      </div>
+    </article>
+
+    <article class="feature" id="f3">
+      <div class="text">
+        <div class="num">03 · Reconstructions multiplanaires</div>
+        <h3>Trois plans, un seul point.</h3>
+        <p class="need"><strong>En salle de lecture :</strong> une anomalie se confirme, se mesure et se localise sur les plans coronal et sagittal, pas seulement en axial.</p>
+        <ul>
+          <li>Plans coronal et sagittal reconstruits avec leurs vraies proportions, la tête en haut.</li>
+          <li>Un clic avec le réticule place les trois plans sur le même point.</li>
+          <li>Plans repérés par couleur ; repères d’orientation D/G, A/P, S/I calculés à partir des balises DICOM.</li>
+        </ul>
+      </div>
+      <img src="guide-assets/fr/mpr.jpg" alt="Disposition MPR avec les vues axiale, coronale et sagittale et un réticule coloré" width="800" height="360" loading="lazy">
+    </article>
+
+    <article class="feature flip" id="f4">
+      <div class="text">
+        <div class="num">04 · Mesures</div>
+        <h3>Des valeurs prêtes pour le compte rendu.</h3>
+        <p class="need"><strong>En salle de lecture :</strong> la taille d’un nodule conditionne la surveillance, et la densité d’une lésion distingue kyste, graisse, tissu ou calcium.</p>
+        <ul>
+          <li>Densité en UH en direct sous le curseur, avec les coordonnées patient.</li>
+          <li>Distances en millimètres selon la taille réelle des pixels, y compris sur les reconstructions.</li>
+          <li>ROI elliptique : moyenne ± écart-type, min / max et surface, calculés sur les images d’origine.</li>
+        </ul>
+      </div>
+      <img src="guide-assets/fr/measurements.jpg" alt="Largeur cardiaque mesurée, ROI elliptique avec statistiques en UH et repère sur un corps vertébral" width="800" height="360" loading="lazy">
+    </article>
+
+    <article class="feature" id="f5">
+      <div class="text">
+        <div class="num">05 · MIP et coupes épaisses</div>
+        <h3>Voir le nodule, pas le vaisseau.</h3>
+        <p class="need"><strong>En salle de lecture :</strong> la MIP fait ressortir les petits nodules par rapport aux vaisseaux ; la MinIP met en évidence les voies aériennes et l’emphysème.</p>
+        <ul>
+          <li>MIP, MinIP et moyenne de 2 à 40 mm, dans tous les plans.</li>
+          <li>Changement de mode avec <kbd>T</kbd> ; épaisseur avec <kbd>+</kbd> / <kbd>−</kbd>.</li>
+          <li>Les mesures lisent toujours les voxels d’origine, jamais la projection.</li>
+        </ul>
+      </div>
+      <div class="card keys">
+        <kbd>MIP</kbd><span>Nodules, vaisseaux, calcifications</span>
+        <kbd>MinIP</kbd><span>Voies aériennes, emphysème, piégeage</span>
+        <kbd>Moy.</kbd><span>Moins de bruit sur les coupes fines</span>
+        <kbd>T</kbd><span>Non → MIP → MinIP → Moy.</span>
+      </div>
+    </article>
+
+    <article class="feature flip" id="f6">
+      <div class="text">
+        <div class="num">06 · Comparaison</div>
+        <h3>Nouveau, stable ou évolutif ?</h3>
+        <p class="need"><strong>En salle de lecture :</strong> pour un scanner de suivi, la question essentielle est l’évolution par rapport à l’examen antérieur.</p>
+        <ul>
+          <li>Deux examens côte à côte avec la même fenêtre.</li>
+          <li>Défilement synchronisé en millimètres, même avec des espacements de coupe différents ; zoom et déplacement reproduits.</li>
+          <li>Alignement unique sur un repère anatomique avec <kbd>K</kbd>, puis lecture conjointe.</li>
+        </ul>
+      </div>
+      <img src="guide-assets/fr/compare.jpg" alt="Deux scanners thoraciques côte à côte en disposition Comparaison" width="800" height="360" loading="lazy">
+    </article>
+
+    <article class="feature" id="f7">
+      <div class="text">
+        <div class="num">07 · Observations et compte rendu</div>
+        <h3>De la lecture au compte rendu.</h3>
+        <p class="need"><strong>En salle de lecture :</strong> chaque anomalie doit avoir un nom, une valeur et une localisation qu’un confrère ou une RCP puisse retrouver.</p>
+        <ul>
+          <li>Mesures et repères deviennent des observations nommées, enregistrées automatiquement.</li>
+          <li>Un clic ramène à n’importe quelle observation, dans le bon plan.</li>
+          <li>Projet de compte rendu en Markdown et images clés annotées en PNG.</li>
+        </ul>
+      </div>
+      <img src="guide-assets/fr/findings.jpg" alt="Liste d’observations : ROI cardiaque, largeur cardiaque et corps vertébral" width="800" height="360" loading="lazy">
+    </article>
+  </div>
+</section>
+
+<section class="alt" id="start">
+  <div class="wrap">
+    <h2>Démarrer</h2>
+    <p class="section-lede">Luminor se compose d’un petit serveur Python et d’une application web. Tout fonctionne sur votre ordinateur.</p>
+    <div class="steps3">
+      <div class="step">
+        <b>1 · Installer</b>
+        <p>Python 3.10 ou plus récent, avec NumPy et pydicom.</p>
+<pre>git clone https://github.com/dhnguyends/luminor-dicom.git
+cd luminor-dicom
+pip install -r requirements.txt</pre>
+      </div>
+      <div class="step">
+        <b>2 · Indiquer vos examens</b>
+        <p>Un dossier contenant un sous-dossier de fichiers <code>.dcm</code> par série de scanner.</p>
+<pre>python server.py --data /chemin/vers/series</pre>
+      </div>
+      <div class="step">
+        <b>3 · Lire</b>
+        <p>Ouvrez la visionneuse dans Chrome, Edge, Safari ou Firefox, puis appuyez sur <kbd>?</kbd> pour les raccourcis.</p>
+<pre>http://127.0.0.1:8770/</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="docs">
+  <div class="wrap">
+    <h2>Documentation</h2>
+    <p class="section-lede">Un guide illustré de chaque fonction, avec une routine de lecture, des valeurs de référence en UH et une aide au dépannage.</p>
+    <div class="docs">
+      <a class="doc" href="guide-fr.html"><span class="tag">Français</span><b>Guide utilisateur</b><span>Lire un scanner avec Luminor, pas à pas.</span></a>
+      <a class="doc" href="guide.html" hreflang="en" lang="en"><span class="tag">English</span><b>User Guide</b><span>Reading CT with Luminor, step by step.</span></a>
+      <a class="doc" href="https://github.com/dhnguyends/luminor-dicom"><span class="tag">Code source</span><b>GitHub</b><span>Code, architecture et API dans le README.</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="center">
+  <div class="wrap">
+    <div class="notice" role="note"><span class="ic">!</span><p><strong>Usage réservé à la recherche et à l’enseignement.</strong> Luminor n’est pas un dispositif médical certifié et ne doit pas servir à des décisions diagnostiques ou thérapeutiques.</p></div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <span>Luminor · Visionneuse de scanner open source</span>
+    <span><a href="guide-fr.html">Guide utilisateur</a> · <a href="guide.html" hreflang="en">English guide</a> · <a href="https://github.com/dhnguyends/luminor-dicom">GitHub</a></span>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Luminor</title>
+  <meta name="description" content="Local CT viewer: stack scrolling, window/level, MPR, measurements, slab MIP, comparison and findings.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- Library ------------------------------------------------------------->
+  <aside class="sidebar" id="sidebar" data-i18n-aria="library.aria">
+    <div class="sidebar-head">
+      <div class="brand"><img src="favicon.svg" alt=""><div><strong>Luminor</strong><span data-i18n="app.subtitle">CT Viewer</span></div></div>
+    </div>
+    <label class="search"><span data-icon="search"></span>
+      <input id="search" type="search" autocomplete="off" spellcheck="false" data-i18n-placeholder="search.placeholder" data-i18n-aria="search.placeholder">
+    </label>
+    <div class="segmented small" id="label-filter" role="radiogroup" data-i18n-aria="filter.aria">
+      <button data-filter="all" class="on" data-i18n="filter.all">All</button>
+      <button data-filter="1" data-i18n="filter.cancer">Cancer</button>
+      <button data-filter="0" data-i18n="filter.clear">No cancer</button>
+    </div>
+    <div class="list-caption"><span data-i18n="library.caption">Series</span><span id="series-count">—</span></div>
+    <div class="series-list" id="series-list" role="listbox" data-i18n-aria="library.list"></div>
+  </aside>
+
+  <!-- Main ----------------------------------------------------------------->
+  <main class="main">
+    <header class="toolbar" id="toolbar">
+      <button class="tb-btn" id="toggle-sidebar" data-i18n-title="toolbar.library" data-i18n-aria="toolbar.library"><span data-icon="sidebar"></span></button>
+      <div class="title-block">
+        <strong id="title">—</strong>
+        <span id="subtitle"></span>
+      </div>
+      <div class="tb-spacer"></div>
+      <div class="segmented" id="layout-control" role="radiogroup" data-i18n-aria="toolbar.layout"></div>
+      <button class="pill" id="link-toggle" data-i18n-title="link.title" hidden></button>
+      <div class="segmented" id="plane-control" role="radiogroup" data-i18n-aria="toolbar.plane"></div>
+      <div class="segmented tools" id="tool-control" role="radiogroup" data-i18n-aria="toolbar.tools"></div>
+      <button class="tb-btn" id="play" data-i18n-title="toolbar.cine" data-i18n-aria="toolbar.cine"><span data-icon="play"></span></button>
+      <button class="tb-btn" id="help" data-i18n-title="toolbar.help" data-i18n-aria="toolbar.help"><span data-icon="help"></span></button>
+      <button class="tb-btn lang-btn" id="lang-toggle" data-i18n-title="toolbar.lang" data-i18n-aria="toolbar.lang"><span data-icon="globe"></span><span id="lang-code">EN</span></button>
+      <button class="tb-btn" id="toggle-inspector" data-i18n-title="toolbar.inspector" data-i18n-aria="toolbar.inspector"><span data-icon="inspector"></span></button>
+    </header>
+
+    <section class="stage layout-single" id="stage">
+      <div class="vp" id="vp-main"></div>
+      <div class="vp" id="vp-cor"></div>
+      <div class="vp" id="vp-sag"></div>
+      <div class="vp" id="vp-prior"></div>
+      <div class="loader" id="loader" hidden>
+        <div class="loader-card">
+          <div class="spinner"></div>
+          <strong id="loader-title"></strong>
+          <span id="loader-text"></span>
+          <div class="progress"><i id="loader-bar"></i></div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="statusbar">
+      <span id="status-probe">—</span>
+      <span class="tb-spacer"></span>
+      <span id="status-hint" class="dim" data-i18n="status.hint"></span>
+      <span class="disclaimer" data-i18n="status.disclaimer"></span>
+    </footer>
+  </main>
+
+  <!-- Inspector ------------------------------------------------------------>
+  <aside class="inspector" id="inspector" data-i18n-aria="inspector.aria">
+    <section class="card">
+      <h3><span data-icon="contrast"></span><span data-i18n="inspector.window">Window</span></h3>
+      <div class="chips" id="presets"></div>
+      <div class="field-row">
+        <label><span data-i18n="inspector.center">Center</span><input type="number" id="wl-c" step="10"></label>
+        <label><span data-i18n="inspector.width">Width</span><input type="number" id="wl-w" step="10" min="1"></label>
+        <button class="icon-btn" id="invert" data-i18n-title="inspector.invert" data-i18n-aria="inspector.invert"><span data-icon="invert"></span></button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3><span data-icon="layers"></span><span data-i18n="inspector.slab">Slab</span></h3>
+      <div class="segmented full" id="slab-mode" role="radiogroup" data-i18n-aria="inspector.slabMode">
+        <button data-mode="none" class="on" data-i18n="slab.none">Off</button>
+        <button data-mode="mip" data-i18n="slab.mip">MIP</button>
+        <button data-mode="minip" data-i18n="slab.minip">MinIP</button>
+        <button data-mode="avg" data-i18n="slab.avg">Avg</button>
+      </div>
+      <label class="slider"><span data-i18n="inspector.thickness">Thickness</span> <output id="slab-mm-out">10 mm</output>
+        <input type="range" id="slab-mm" min="2" max="40" step="1" value="10">
+      </label>
+    </section>
+
+    <section class="card">
+      <h3><span data-icon="film"></span><span data-i18n="inspector.cine">Cine</span></h3>
+      <label class="slider"><span data-i18n="inspector.speed">Speed</span> <output id="fps-out"></output>
+        <input type="range" id="fps" min="2" max="40" step="1" value="12">
+      </label>
+    </section>
+
+    <section class="card grow">
+      <h3><span data-icon="list"></span><span data-i18n="inspector.findings">Findings</span> <span class="count" id="findings-count">0</span></h3>
+      <div class="findings" id="findings"></div>
+      <div class="btn-row">
+        <button class="btn" id="add-marker" data-i18n-title="inspector.markerTitle"><span data-icon="pin"></span><span data-i18n="inspector.marker">Marker</span></button>
+        <button class="btn" id="key-image" data-i18n-title="inspector.keyImageTitle"><span data-icon="image"></span><span data-i18n="inspector.keyImage">Key image</span></button>
+        <button class="btn primary" id="open-report"><span data-icon="report"></span><span data-i18n="inspector.report">Report</span></button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3><span data-icon="info"></span><span data-i18n="inspector.series">Series</span></h3>
+      <dl class="info" id="series-info"><dt>—</dt><dd></dd></dl>
+    </section>
+  </aside>
+</div>
+
+<!-- Sheets ------------------------------------------------------------------>
+<dialog class="sheet" id="help-sheet" data-i18n-aria="help.aria">
+  <header><h2 data-i18n="help.title">Keyboard &amp; mouse</h2><button class="icon-btn" data-close data-i18n-aria="help.close"><span data-icon="close"></span></button></header>
+  <div class="shortcut-grid" id="shortcut-grid"></div>
+  <footer>
+    <span class="dim" data-i18n="help.more"></span>
+    <span class="tb-spacer"></span>
+    <a class="btn" id="other-guide" target="_blank" rel="noopener"><span data-i18n="help.otherGuide"></span></a>
+    <a class="btn primary" id="user-guide" target="_blank" rel="noopener"><span data-icon="report"></span><span data-i18n="help.guide"></span></a>
+  </footer>
+</dialog>
+
+<dialog class="sheet wide" id="report-sheet" data-i18n-aria="report.title">
+  <header><h2 data-i18n="report.title">Report draft</h2><button class="icon-btn" data-close data-i18n-aria="help.close"><span data-icon="close"></span></button></header>
+  <textarea id="report-text" spellcheck="true" data-i18n-aria="report.aria"></textarea>
+  <footer>
+    <span class="dim" data-i18n="report.note"></span>
+    <span class="tb-spacer"></span>
+    <button class="btn" id="report-copy"><span data-icon="copy"></span><span data-i18n="report.copy">Copy</span></button>
+    <button class="btn primary" id="report-download"><span data-icon="download"></span><span data-i18n="report.download">Download .md</span></button>
+  </footer>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

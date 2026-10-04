@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luminor User Guide</title>
+<meta name="description" content="How to read CT studies with Luminor: navigation, windowing, MPR, measurements, slabs, comparison, findings and reporting.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="guide.css">
+</head>
+<body>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+  <a class="brand" href="index.html"><img src="favicon.svg" alt=""><div><strong>Luminor</strong><span>User Guide</span></div></a>
+  <div class="lang" aria-label="Language"><a href="guide.html" hreflang="en" aria-current="page">English</a><a href="guide-fr.html" hreflang="fr">Français</a></div>
+  <ol>
+    <li><a href="#welcome">Welcome</a></li>
+    <li><a href="#start">Getting started</a></li>
+    <li><a href="#tour">The interface</a></li>
+    <li><a href="#navigate">Scrolling &amp; cine</a></li>
+    <li><a href="#window">Window &amp; level</a></li>
+    <li><a href="#mpr">MPR &amp; crosshair</a></li>
+    <li><a href="#measure">Measurements</a></li>
+    <li><a href="#slab">MIP &amp; slabs</a></li>
+    <li><a href="#compare">Comparison</a></li>
+    <li><a href="#findings">Findings &amp; reports</a></li>
+    <li><a href="#workflow">A reading routine</a></li>
+    <li><a href="#shortcuts">Shortcuts</a></li>
+    <li><a href="#reference">HU reference</a></li>
+    <li><a href="#troubleshooting">Troubleshooting</a></li>
+    <li><a href="#limits">Privacy &amp; limitations</a></li>
+  </ol>
+  <a class="open-app app-link" href="/" data-remote-label="View on GitHub">Open Luminor</a>
+</nav>
+
+<main>
+<header class="hero" id="welcome">
+  <div class="eyebrow">User Guide</div>
+  <h1>Reading CT with Luminor</h1>
+  <p class="lede">Luminor is a fast, local CT viewer built around the seven actions radiologists use most. This guide walks you through each of them, from opening a study to exporting a report draft.</p>
+</header>
+
+<div class="callout safety" role="note">
+  <span class="ic">!</span>
+  <p><strong>Research and education use only.</strong> Luminor is not a certified medical device. Do not use it to make diagnostic or treatment decisions.</p>
+</div>
+
+<div class="feature-grid">
+  <div class="feature"><i>1</i><b>Scroll &amp; cine</b><span>Wheel through hundreds of images, or play them as a movie.</span></div>
+  <div class="feature"><i>2</i><b>Window &amp; level</b><span>Right-drag or one-key presets for lung, mediastinum, bone, liver, brain.</span></div>
+  <div class="feature"><i>3</i><b>MPR</b><span>Axial, coronal and sagittal views linked by one crosshair.</span></div>
+  <div class="feature"><i>4</i><b>Measurements</b><span>Live HU probe, lengths in mm, ellipse ROI statistics.</span></div>
+  <div class="feature"><i>5</i><b>MIP &amp; slabs</b><span>MIP, MinIP and average slabs from 2 to 40 mm.</span></div>
+  <div class="feature"><i>6</i><b>Comparison</b><span>Two studies side by side, scrolling linked in millimetres.</span></div>
+  <div class="feature"><i>7</i><b>Findings &amp; reports</b><span>Named findings, one-click navigation, report draft and key images.</span></div>
+</div>
+
+<!-- ===================================================================== -->
+<h2 id="start"><span class="num">2</span>Getting started</h2>
+
+<h3>Start Luminor</h3>
+<ol class="steps">
+  <li>Open a PowerShell window in the <code>Claude-Radio</code> folder.</li>
+  <li>Run <code>.\start.ps1</code>. It uses the <code>DICOM</code> Anaconda environment when it exists, starts the server on port 8770 and opens your browser after two seconds.</li>
+  <li>Leave the PowerShell window open while you work. Closing it stops Luminor.</li>
+</ol>
+<p>Luminor runs at <a href="http://127.0.0.1:8770/">http://127.0.0.1:8770/</a> in Chrome, Edge, Safari or Firefox. Options:</p>
+<table>
+  <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>.\start.ps1 -Port 9000</code></td><td>Use another port if 8770 is busy.</td></tr>
+    <tr><td><code>.\start.ps1 -DataDir "D:\scans"</code></td><td>Read series from another folder. Each sub-folder is one series of <code>.dcm</code> files.</td></tr>
+    <tr><td><code>python server.py --labels file.csv</code></td><td>Optional <code>id,cancer</code> CSV used for the library labels and filter.</td></tr>
+  </tbody>
+</table>
+
+<h3>Open a series</h3>
+<p>The <strong>library</strong> on the left lists every series in the data folder. Click a row to open it. Luminor first reads the DICOM files (a few seconds), then loads the volume into the browser. A progress card shows both steps.</p>
+<ul>
+  <li><strong>Search</strong> filters by series ID. Type any part of it.</li>
+  <li><strong>All · Cancer · No cancer</strong> filters by the dataset label. Rows show a red <em>Cancer</em> or grey <em>Clear</em> tag.</li>
+  <li>Image counts appear as soon as the folders have been counted. Until then a row shows <em>Counting…</em>.</li>
+  <li>The next time you start Luminor, it reopens the last series you viewed.</li>
+</ul>
+
+<h3 id="language">Interface language</h3>
+<p>The <strong>EN / FR</strong> button (with a globe) in the toolbar switches the whole interface between English and French without reloading the study: labels, help, findings, the report draft and the on-image text. Luminor remembers your choice; on first launch it follows the browser language.</p>
+<p>In French, Luminor follows French conventions: <strong>UH</strong> for Hounsfield units, decimal commas, <strong>C/L</strong> (centre/largeur) for the window and <strong>D/G</strong> (droite/gauche) instead of R/L for orientation. Finding names stay exactly as you typed them.</p>
+
+<!-- ===================================================================== -->
+<h2 id="tour"><span class="num">3</span>The interface</h2>
+<figure>
+  <img src="guide-assets/overview.jpg" alt="Luminor with the library on the left, an axial lung image in the centre and the inspector on the right" width="800" height="360">
+  <figcaption>The library, the viewer with an axial lung image, and the inspector with window presets, slab and cine controls.</figcaption>
+</figure>
+
+<div class="diagram" role="img" aria-label="Diagram of the Luminor window with numbered areas">
+<svg viewBox="0 0 820 400" xmlns="http://www.w3.org/2000/svg" font-family="Inter, -apple-system, Segoe UI, sans-serif">
+  <rect x="1" y="1" width="818" height="398" rx="14" fill="var(--surface)" stroke="var(--sep)"/>
+  <!-- library -->
+  <rect x="12" y="12" width="150" height="376" rx="10" fill="var(--fill)"/>
+  <rect x="24" y="44" width="126" height="18" rx="6" fill="var(--fill)"/>
+  <g fill="var(--fill)"><rect x="24" y="98" width="126" height="26" rx="6"/><rect x="24" y="130" width="126" height="26" rx="6"/><rect x="24" y="162" width="126" height="26" rx="6"/><rect x="24" y="194" width="126" height="26" rx="6"/></g>
+  <rect x="24" y="98" width="126" height="26" rx="6" fill="var(--accent)" opacity=".85"/>
+  <!-- toolbar -->
+  <rect x="172" y="12" width="478" height="36" rx="8" fill="var(--fill)"/>
+  <g fill="var(--text-3)"><rect x="300" y="22" width="60" height="16" rx="5"/><rect x="370" y="22" width="110" height="16" rx="5"/><rect x="490" y="22" width="100" height="16" rx="5"/></g>
+  <!-- viewer -->
+  <rect x="172" y="56" width="478" height="300" rx="8" fill="#000"/>
+  <ellipse cx="411" cy="210" rx="120" ry="90" fill="#3a3a3c"/>
+  <ellipse cx="370" cy="205" rx="42" ry="58" fill="#111"/><ellipse cx="452" cy="205" rx="42" ry="58" fill="#111"/>
+  <line x1="172" y1="208" x2="650" y2="208" stroke="var(--coronal)" stroke-width="1.2" opacity=".8"/>
+  <line x1="405" y1="56" x2="405" y2="356" stroke="var(--sagittal)" stroke-width="1.2" opacity=".8"/>
+  <g fill="#f5f5f7" font-size="10" font-weight="600"><text x="182" y="74">Axial</text><text x="182" y="87" fill="#aaa">Im 98 / 195</text><text x="640" y="74" text-anchor="end">C -600 W 1500</text><text x="182" y="346">-907 HU</text><text x="640" y="346" text-anchor="end">100 %</text></g>
+  <g fill="#ffd60a" font-size="11" font-weight="700"><text x="408" y="70" text-anchor="middle">A</text><text x="408" y="352" text-anchor="middle">P</text><text x="178" y="212">R</text><text x="644" y="212" text-anchor="end">L</text></g>
+  <!-- status -->
+  <rect x="172" y="364" width="478" height="24" rx="6" fill="var(--fill)"/>
+  <!-- inspector -->
+  <rect x="660" y="12" width="148" height="376" rx="10" fill="var(--fill)"/>
+  <g fill="var(--fill)"><rect x="670" y="24" width="128" height="64" rx="8"/><rect x="670" y="96" width="128" height="50" rx="8"/><rect x="670" y="154" width="128" height="34" rx="8"/><rect x="670" y="196" width="128" height="120" rx="8"/><rect x="670" y="324" width="128" height="54" rx="8"/></g>
+  <!-- callouts -->
+  <g font-size="12" font-weight="700" fill="#fff" text-anchor="middle">
+    <circle cx="87" cy="26" r="11" fill="var(--accent)"/><text x="87" y="30">1</text>
+    <circle cx="245" cy="30" r="11" fill="var(--accent)"/><text x="245" y="34">2</text>
+    <circle cx="530" cy="130" r="11" fill="var(--accent)"/><text x="530" y="134">3</text>
+    <circle cx="300" cy="78" r="11" fill="var(--accent)"/><text x="300" y="82">4</text>
+    <circle cx="411" cy="376" r="11" fill="var(--accent)"/><text x="411" y="380">5</text>
+    <circle cx="734" cy="256" r="11" fill="var(--accent)"/><text x="734" y="260">6</text>
+  </g>
+</svg>
+</div>
+<ul class="legend">
+  <li><span class="badge-n">1</span><span><strong>Library</strong>: series list, search, label filter and the compare button.</span></li>
+  <li><span class="badge-n">2</span><span><strong>Toolbar</strong>: layout, plane, tools, cine, help, panel toggles.</span></li>
+  <li><span class="badge-n">3</span><span><strong>Viewer</strong>: one to three image panes. The active pane has a blue outline.</span></li>
+  <li><span class="badge-n">4</span><span><strong>Overlay</strong>: plane, image number, position, window, slab, HU and zoom.</span></li>
+  <li><span class="badge-n">5</span><span><strong>Status bar</strong>: HU, voxel and patient coordinates under the cursor.</span></li>
+  <li><span class="badge-n">6</span><span><strong>Inspector</strong>: window, slab, cine, findings and series details.</span></li>
+</ul>
+
+<h3>The toolbar</h3>
+<table>
+  <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td>Sidebar buttons (far left and right)</td><td>Show or hide the library and the inspector. On small screens both start hidden.</td></tr>
+    <tr><td>Layout: Single · MPR · Compare</td><td>One plane, three linked planes, or two studies side by side (<kbd>L</kbd> cycles).</td></tr>
+    <tr><td>Linked</td><td>Appears in Compare layout. Links scrolling, zoom and pan between the two studies (<kbd>K</kbd>).</td></tr>
+    <tr><td>Plane: Axial · Coronal · Sagittal</td><td>The plane shown in Single and Compare layouts (<kbd>A</kbd> <kbd>C</kbd> <kbd>S</kbd>).</td></tr>
+    <tr><td>Tools</td><td>What the <em>left</em> mouse button does: Crosshair <kbd>X</kbd>, Window/level <kbd>W</kbd>, Pan <kbd>H</kbd>, Zoom <kbd>Z</kbd>, Length <kbd>M</kbd>, Ellipse ROI <kbd>E</kbd>.</td></tr>
+    <tr><td>Play</td><td>Starts or stops cine (<kbd>Space</kbd>).</td></tr>
+    <tr><td>?</td><td>Keyboard and mouse cheat sheet, with a link to this guide.</td></tr>
+    <tr><td>EN / FR</td><td>Interface language: English or French.</td></tr>
+  </tbody>
+</table>
+
+<h3>Reading the overlay</h3>
+<table>
+  <thead><tr><th>Corner</th><th>Shows</th></tr></thead>
+  <tbody>
+    <tr><td>Top left</td><td>Plane name and colour (<span class="dot" style="background:var(--axial)"></span>axial, <span class="dot" style="background:var(--coronal)"></span>coronal, <span class="dot" style="background:var(--sagittal)"></span>sagittal), image number, and slice position in mm (Z for axial, Y for coronal, X for sagittal). A <em>COMPARE</em> badge marks the comparison study.</td></tr>
+    <tr><td>Top right</td><td>Window centre (C) and width (W), <em>INV</em> when inverted, the active slab (for example <em>MIP 10 mm</em>), and the series ID.</td></tr>
+    <tr><td>Bottom left</td><td>HU value and voxel indices under the mouse.</td></tr>
+    <tr><td>Bottom right</td><td>Zoom level.</td></tr>
+    <tr><td>Edges (yellow)</td><td>Patient orientation: <strong>R/L</strong> right/left, <strong>A/P</strong> anterior/posterior, <strong>S/I</strong> superior/inferior. As on any radiology display, the patient's right is on the left of an axial image.</td></tr>
+  </tbody>
+</table>
+<div class="callout safety"><span class="ic">!</span><p>Always check the orientation letters before describing laterality. They are calculated from the DICOM orientation tags of each series. In the French interface they read <strong>D/G</strong>: D (droite) = right, G (gauche) = left.</p></div>
+
+<!-- ===================================================================== -->
+<h2 id="navigate"><span class="num">4</span>Scrolling &amp; cine</h2>
+<p>Scrolling through the stack is the heart of CT reading, so it is always on the mouse wheel, whatever tool is selected.</p>
+<table>
+  <thead><tr><th>Action</th><th>Result</th></tr></thead>
+  <tbody>
+    <tr><td>Mouse wheel</td><td>One image per notch. Trackpads scroll smoothly.</td></tr>
+    <tr><td><kbd>Shift</kbd> + wheel</td><td>Five images per notch.</td></tr>
+    <tr><td><kbd>↑</kbd> <kbd>↓</kbd> (or <kbd>←</kbd> <kbd>→</kbd>)</td><td>One image. Add <kbd>Shift</kbd> for five.</td></tr>
+    <tr><td><kbd>Page Up</kbd> <kbd>Page Down</kbd></td><td>Ten images.</td></tr>
+    <tr><td><kbd>Home</kbd> <kbd>End</kbd></td><td>First or last image.</td></tr>
+    <tr><td><kbd>Space</kbd></td><td>Play or pause cine in the active pane. It loops back to the first image.</td></tr>
+  </tbody>
+</table>
+<p>Set the cine speed (2–40 images per second) with the <strong>Cine</strong> slider in the inspector. Cine and the keyboard act on the <em>active pane</em>, the one under your mouse, which has a blue outline.</p>
+
+<!-- ===================================================================== -->
+<h2 id="window"><span class="num">5</span>Window &amp; level</h2>
+<p>CT images contain far more grey levels than a screen can show. The <strong>window</strong> chooses which Hounsfield range is displayed: the <em>centre</em> (level) sets the middle grey and the <em>width</em> sets the contrast.</p>
+<h3>Presets</h3>
+<table>
+  <thead><tr><th>Key</th><th>Preset</th><th class="num-col">Centre / width (HU)</th><th>Use it for</th></tr></thead>
+  <tbody>
+    <tr><td><kbd>1</kbd></td><td>Lung</td><td class="num-col">−600 / 1500</td><td>Parenchyma, nodules, airways</td></tr>
+    <tr><td><kbd>2</kbd></td><td>Mediastinum</td><td class="num-col">40 / 400</td><td>Heart, vessels, lymph nodes, soft tissue</td></tr>
+    <tr><td><kbd>3</kbd></td><td>Bone</td><td class="num-col">400 / 1800</td><td>Ribs, spine, fractures, lytic or sclerotic lesions</td></tr>
+    <tr><td><kbd>4</kbd></td><td>Liver</td><td class="num-col">60 / 160</td><td>Subtle low-contrast liver lesions</td></tr>
+    <tr><td><kbd>5</kbd></td><td>Brain</td><td class="num-col">40 / 80</td><td>Narrow soft-tissue window</td></tr>
+  </tbody>
+</table>
+<h3>Adjust freely</h3>
+<ul>
+  <li><strong>Right-drag</strong> on any image, with any tool selected. Drag <em>left/right</em> to narrow or widen the window. Drag <em>down/up</em> to raise or lower the level: the image gets darker as you drag down. The drag speed adapts to the current width, so fine adjustments stay easy in narrow windows.</li>
+  <li>Or select the <strong>Window/level</strong> tool (<kbd>W</kbd>) and use the left button.</li>
+  <li>Or type exact values in <strong>Center</strong> and <strong>Width</strong> in the inspector.</li>
+  <li><kbd>I</kbd> inverts the grey scale.</li>
+</ul>
+<p>The window applies to every pane, including the comparison study, so both are always displayed the same way.</p>
+
+<!-- ===================================================================== -->
+<h2 id="mpr"><span class="num">6</span>MPR &amp; crosshair</h2>
+<figure>
+  <img src="guide-assets/mpr.jpg" alt="MPR layout with axial, coronal and sagittal panes and a coloured crosshair, with 10 mm MIP slabs" width="800" height="360">
+  <figcaption>MPR layout: axial on the left, coronal and sagittal on the right. The coloured lines show where the other planes cut through each image. Here a 10 mm MIP slab is active.</figcaption>
+</figure>
+<p>Multiplanar reconstruction (MPR) rebuilds coronal and sagittal images from the axial stack, with correct physical proportions and the head at the top.</p>
+<ol class="steps">
+  <li>Choose <strong>MPR</strong> in the layout control, or press <kbd>L</kbd>.</li>
+  <li>Select the <strong>Crosshair</strong> tool (<kbd>X</kbd>). Click or drag on any pane to place the crosshair. The other two panes jump to that point.</li>
+  <li>Scroll in any pane. The matching line moves in the other two.</li>
+  <li><strong>Double-click</strong> a pane to enlarge it. Double-click again to return to three panes.</li>
+</ol>
+<p>The crosshair lines take the colour of the plane they represent: <span class="dot" style="background:var(--axial)"></span>blue for axial, <span class="dot" style="background:var(--coronal)"></span>green for coronal, <span class="dot" style="background:var(--sagittal)"></span>orange for sagittal.</p>
+<div class="callout tip"><span class="ic">i</span><p>To read a whole series in another plane, press <kbd>C</kbd> or <kbd>S</kbd> to switch the Single layout to coronal or sagittal. Press <kbd>A</kbd> to go back to axial.</p></div>
+
+<h3>Zoom and pan</h3>
+<ul>
+  <li><kbd>Ctrl</kbd> + wheel (or a trackpad pinch) zooms around the mouse position, from 25 % to 1200 %.</li>
+  <li><strong>Middle-drag</strong> pans with any tool. The <strong>Pan</strong> (<kbd>H</kbd>) and <strong>Zoom</strong> (<kbd>Z</kbd>) tools do the same with the left button.</li>
+  <li><kbd>R</kbd> resets zoom and pan.</li>
+</ul>
+
+<!-- ===================================================================== -->
+<h2 id="measure"><span class="num">7</span>Measurements</h2>
+<figure>
+  <img src="guide-assets/measurements.jpg" alt="Zoomed mediastinal window with a length measurement across the heart, an ellipse ROI with HU statistics and a marker on a vertebral body" width="800" height="360">
+  <figcaption>A length across the heart (90.9 mm), an ellipse ROI with mean ± SD, min/max and area, and a marker on a vertebral body (187 HU).</figcaption>
+</figure>
+
+<h3>HU probe</h3>
+<p>Move the mouse over any image. The overlay (bottom left) and the status bar show the <strong>Hounsfield value</strong> of the voxel, its indices, and its patient coordinates in millimetres (LPS convention: +X is the patient's left, +Y posterior, +Z superior). The probe always reads the original voxel, even when a slab is displayed.</p>
+
+<h3>Length</h3>
+<ol class="steps">
+  <li>Select <strong>Length</strong> (<kbd>M</kbd>).</li>
+  <li>Drag from one edge of the structure to the other. The distance in millimetres updates as you drag.</li>
+  <li>Release to save it as a finding.</li>
+</ol>
+<p>Lengths use the true pixel spacing of the plane, so they are also correct on coronal and sagittal reformats, where slice spacing and pixel size differ.</p>
+
+<h3>Ellipse ROI</h3>
+<ol class="steps">
+  <li>Select <strong>Ellipse ROI</strong> (<kbd>E</kbd>).</li>
+  <li>Drag the bounding box of the ellipse over the region.</li>
+  <li>Release. Luminor shows the <strong>mean ± standard deviation</strong>, <strong>minimum / maximum</strong> HU and the <strong>area</strong>.</li>
+</ol>
+<div class="callout warn"><span class="ic">!</span><p>ROI statistics are calculated on the single original image, never on a MIP/MinIP/average slab, so the values stay true Hounsfield units. Keep the ROI well inside the structure to avoid partial-volume averaging with its surroundings.</p></div>
+
+<h3>Markers</h3>
+<p>Press <kbd>B</kbd> (or the <strong>Marker</strong> button) to drop a marker at the crosshair position. It records the HU value at that point. This is useful for flagging a lesion you want to come back to.</p>
+
+<h3>Selecting and deleting</h3>
+<p>Measurements appear only on the image where they were drawn. Click one (with the Crosshair, Length or Ellipse tool) to select it. It turns light blue. Press <kbd>Delete</kbd> to remove the selected finding, or <kbd>Esc</kbd> to deselect it or cancel a drawing.</p>
+
+<!-- ===================================================================== -->
+<h2 id="slab"><span class="num">8</span>MIP &amp; slabs</h2>
+<p>A slab combines several adjacent images into one, centred on the current image. Choose the mode in the inspector's <strong>Slab</strong> card, or press <kbd>T</kbd> to cycle through them.</p>
+<table>
+  <thead><tr><th>Mode</th><th>Keeps</th><th>Best for</th></tr></thead>
+  <tbody>
+    <tr><td>MIP</td><td>Brightest value along the slab</td><td>Lung nodules (they stand out from vessels), vessels, calcifications</td></tr>
+    <tr><td>MinIP</td><td>Darkest value</td><td>Airways, emphysema, air trapping</td></tr>
+    <tr><td>Avg</td><td>Mean value</td><td>Reducing noise in thin images</td></tr>
+  </tbody>
+</table>
+<p>Set the thickness from 2 to 40 mm with the slider or <kbd>+</kbd> / <kbd>−</kbd>. The overlay shows the thickness actually used, which is rounded to a whole number of slices. Slabs work in every plane and in every pane.</p>
+<div class="callout tip"><span class="ic">i</span><p>A good nodule search: lung window (<kbd>1</kbd>), MIP 8–10 mm (<kbd>T</kbd>), then scroll slowly from apex to base. Anything round that does not connect to a vessel as you scroll deserves a closer look on thin images.</p></div>
+
+<!-- ===================================================================== -->
+<h2 id="compare"><span class="num">9</span>Comparison</h2>
+<figure>
+  <img src="guide-assets/compare.jpg" alt="Compare layout with two axial lung images side by side and the Linked toggle in the toolbar" width="800" height="360">
+  <figcaption>Compare layout. The current study is on the left; the comparison study, marked <em>COMPARE</em>, is on the right. <em>Linked</em> in the toolbar keeps them in step.</figcaption>
+</figure>
+<ol class="steps">
+  <li>In the library, hover over the series you want to compare with and click the <strong>⧉</strong> button on its row.</li>
+  <li>Luminor switches to the <strong>Compare</strong> layout. The comparison starts at the same relative height in the body as your current image.</li>
+  <li>Scroll either pane. While <strong>Linked</strong> is on, the other follows by the same distance in millimetres, even if the two studies have different slice spacing. Zoom and pan are mirrored too.</li>
+</ol>
+<h3>Aligning two studies</h3>
+<p>Patients are never positioned identically, so align the studies on an anatomical landmark (for example the carina or a lesion) once:</p>
+<ol class="steps">
+  <li>Press <kbd>K</kbd> to <strong>unlink</strong>.</li>
+  <li>Scroll each pane to the same landmark.</li>
+  <li>Press <kbd>K</kbd> again. Luminor records the offset between them, and they now scroll together at matching levels.</li>
+</ol>
+<p>Changing the plane re-centres the comparison study, so re-align after switching between axial, coronal and sagittal. Measurements and markers are made on the current study (left pane).</p>
+
+<!-- ===================================================================== -->
+<h2 id="findings"><span class="num">10</span>Findings &amp; reports</h2>
+<figure>
+  <img src="guide-assets/findings.jpg" alt="Findings list in the inspector with a heart ROI, a cardiac width and a vertebral body marker" width="800" height="360">
+  <figcaption>Every measurement and marker becomes a finding with its value and exact location.</figcaption>
+</figure>
+<h3>Working with findings</h3>
+<ul>
+  <li><strong>Rename</strong>: click the name, type (for example "RUL nodule"), and press <kbd>Enter</kbd>. The name also appears on the image.</li>
+  <li><strong>Go to</strong>: click a finding to jump straight to its image. The crosshair centres on it, and Luminor switches plane if needed.</li>
+  <li><strong>Delete</strong>: hover over a finding and click the trash icon, or select it and press <kbd>Delete</kbd>.</li>
+  <li>Findings are <strong>saved automatically</strong> on your computer, one file per series in <code>Claude-Radio/data/findings/</code>. They come back when you reopen the series.</li>
+</ul>
+
+<h3>Report draft</h3>
+<figure>
+  <img src="guide-assets/report.jpg" alt="Report draft sheet with editable Markdown text and Copy and Download buttons" width="800" height="360">
+  <figcaption>The report draft is plain Markdown that you can edit before copying or downloading.</figcaption>
+</figure>
+<p>Click <strong>Report</strong> in the Findings card. Luminor writes a draft with the series details, a technique line, a numbered list of your findings with values and locations, and an empty <em>Impression</em> section. Complete the contrast phase, protocol and impression yourself. Then click <strong>Copy</strong> to paste it into your report, or <strong>Download .md</strong> to save it.</p>
+
+<h3>Key images</h3>
+<p><strong>Key image</strong> saves the active pane as a PNG, including measurements, the overlay text, orientation letters and a "research use only" watermark. The file name contains the series, plane and image number, for example <code>key-image_0015ceb8_axial_98.png</code>.</p>
+
+<!-- ===================================================================== -->
+<h2 id="workflow"><span class="num">11</span>A reading routine</h2>
+<p>A suggested systematic routine for a chest CT. Adapt it to your own practice.</p>
+<ol class="steps">
+  <li><strong>Lungs</strong>: press <kbd>1</kbd>, scroll from apex to base, then repeat with a 10 mm MIP (<kbd>T</kbd>) for nodules. Use MinIP for airways.</li>
+  <li><strong>Mediastinum</strong>: press <kbd>2</kbd>. Check the heart, great vessels, oesophagus and lymph node stations. Measure nodes on their short axis (<kbd>M</kbd>).</li>
+  <li><strong>Bones</strong>: press <kbd>3</kbd>. Read the spine in sagittal (<kbd>S</kbd>) and the sternum and ribs on axial and coronal images.</li>
+  <li><strong>Upper abdomen</strong>: press <kbd>4</kbd> for the liver, then check the adrenals, kidneys and spleen.</li>
+  <li><strong>Characterise</strong>: confirm each finding in MPR, measure it, and place ROIs to check density (fat, fluid, soft tissue, calcium).</li>
+  <li><strong>Compare</strong>: open the prior study, align it, and check whether lesions are new, stable or changed.</li>
+  <li><strong>Report</strong>: name your findings, save key images, then open <strong>Report</strong> and complete the impression.</li>
+</ol>
+
+<!-- ===================================================================== -->
+<h2 id="shortcuts"><span class="num">12</span>Keyboard &amp; mouse</h2>
+<p>Press <kbd>?</kbd> (or <kbd>/</kbd>) in Luminor for this list. Shortcuts are ignored while you are typing in a text field. Click an image to return to the viewer.</p>
+<table>
+  <thead><tr><th>Input</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>Wheel · <kbd>↑</kbd> <kbd>↓</kbd></td><td>Previous / next image</td></tr>
+    <tr><td><kbd>Shift</kbd> + wheel or arrows</td><td>Five images</td></tr>
+    <tr><td><kbd>Page Up</kbd> / <kbd>Page Down</kbd></td><td>Ten images</td></tr>
+    <tr><td><kbd>Home</kbd> / <kbd>End</kbd></td><td>First / last image</td></tr>
+    <tr><td><kbd>Space</kbd></td><td>Play / pause cine</td></tr>
+    <tr><td>Right-drag</td><td>Window / level</td></tr>
+    <tr><td>Middle-drag</td><td>Pan</td></tr>
+    <tr><td><kbd>Ctrl</kbd> + wheel</td><td>Zoom at the mouse position</td></tr>
+    <tr><td>Double-click</td><td>Enlarge / restore pane</td></tr>
+    <tr><td><kbd>1</kbd> – <kbd>5</kbd></td><td>Lung · mediastinum · bone · liver · brain window</td></tr>
+    <tr><td><kbd>I</kbd></td><td>Invert</td></tr>
+    <tr><td><kbd>R</kbd></td><td>Reset zoom and pan</td></tr>
+    <tr><td><kbd>A</kbd> · <kbd>C</kbd> · <kbd>S</kbd></td><td>Axial · coronal · sagittal</td></tr>
+    <tr><td><kbd>L</kbd></td><td>Cycle layout: Single → MPR → Compare</td></tr>
+    <tr><td><kbd>T</kbd></td><td>Slab: Off → MIP → MinIP → Avg</td></tr>
+    <tr><td><kbd>+</kbd> / <kbd>−</kbd></td><td>Slab thickness ±2 mm</td></tr>
+    <tr><td><kbd>X</kbd> · <kbd>W</kbd> · <kbd>H</kbd> · <kbd>Z</kbd></td><td>Crosshair · window/level · pan · zoom tool</td></tr>
+    <tr><td><kbd>M</kbd> · <kbd>E</kbd></td><td>Length · ellipse ROI tool</td></tr>
+    <tr><td><kbd>B</kbd></td><td>Marker at the crosshair</td></tr>
+    <tr><td><kbd>Delete</kbd></td><td>Delete the selected finding</td></tr>
+    <tr><td><kbd>K</kbd></td><td>Link / unlink comparison</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Cancel drawing / deselect</td></tr>
+  </tbody>
+</table>
+
+<!-- ===================================================================== -->
+<h2 id="reference"><span class="num">13</span>HU reference</h2>
+<p>Typical unenhanced CT values, as orientation for the probe and ROI tool. Values vary with scanner, protocol, contrast and noise.</p>
+<table>
+  <thead><tr><th>Material</th><th class="num-col">Typical HU</th></tr></thead>
+  <tbody>
+    <tr><td>Air</td><td class="num-col">≈ −1000</td></tr>
+    <tr><td>Aerated lung</td><td class="num-col">−900 to −500</td></tr>
+    <tr><td>Fat</td><td class="num-col">−120 to −60</td></tr>
+    <tr><td>Water, simple fluid</td><td class="num-col">0 to 20</td></tr>
+    <tr><td>Soft tissue, muscle</td><td class="num-col">20 to 60</td></tr>
+    <tr><td>Unenhanced blood</td><td class="num-col">30 to 45</td></tr>
+    <tr><td>Acute haemorrhage</td><td class="num-col">50 to 90</td></tr>
+    <tr><td>Calcification, cortical bone</td><td class="num-col">&gt; 300, up to 2000+</td></tr>
+  </tbody>
+</table>
+
+<!-- ===================================================================== -->
+<h2 id="troubleshooting"><span class="num">14</span>Troubleshooting</h2>
+<table>
+  <thead><tr><th>Problem</th><th>What to do</th></tr></thead>
+  <tbody>
+    <tr><td>The page does not load</td><td>The server is not running. Run <code>.\start.ps1</code> and keep its window open.</td></tr>
+    <tr><td>"Port already in use"</td><td>Luminor is probably already running: open <a href="http://127.0.0.1:8770/">127.0.0.1:8770</a>. Otherwise start it with <code>-Port 9000</code>.</td></tr>
+    <tr><td>"Could not open series"</td><td>The folder must contain readable <code>.dcm</code> files of one series. Check the PowerShell window for the error.</td></tr>
+    <tr><td>Opening is slow</td><td>The first opening reads every DICOM file (a few seconds per study). The last three studies stay cached, so reopening them is quick.</td></tr>
+    <tr><td>The image is black or white</td><td>The window does not match the tissue. Press <kbd>1</kbd> or <kbd>2</kbd>.</td></tr>
+    <tr><td>Keys do nothing</td><td>A text field has focus (search, window values, a finding name). Click on an image.</td></tr>
+    <tr><td>Scrolling skips images</td><td>Some mice send large wheel steps. Use the arrow keys for single-image steps.</td></tr>
+    <tr><td>"Could not save findings"</td><td>The server stopped while you were working. Restart it. Findings made before that were already saved.</td></tr>
+    <tr><td>The browser slows down</td><td>Each study uses about 100 MB of memory, and Compare holds two. Close other heavy tabs, or reload the page.</td></tr>
+  </tbody>
+</table>
+
+<!-- ===================================================================== -->
+<h2 id="limits"><span class="num">15</span>Privacy &amp; limitations</h2>
+<ul>
+  <li><strong>Local only.</strong> The server accepts connections from this computer only (127.0.0.1). Images and findings never leave it. The only outside request is for the Inter font from Google Fonts; without internet, Luminor uses your system font.</li>
+  <li><strong>Not for diagnosis.</strong> Luminor has not been validated or certified as a medical device. Use it for research, teaching and exploration.</li>
+  <li><strong>Data.</strong> Luminor reads CT series stored as folders of DICOM files. It does not connect to a PACS, and it does not support multi-frame or compressed formats that pydicom cannot decode.</li>
+  <li><strong>Geometry.</strong> Reformats assume a standard axial acquisition with evenly spaced slices, which is true of typical chest CT. Check the orientation letters on unusual series.</li>
+  <li><strong>Reports.</strong> The report draft lists only what you measured. Clinical context, technique details and the impression are always yours to write.</li>
+</ul>
+
+<footer class="doc">Luminor User Guide · <a class="app-link" href="/" data-remote-label="Back to the introduction" data-remote-href="index.html">Back to Luminor</a> · Print this page (<kbd>Ctrl</kbd> + <kbd>P</kbd>) to save it as a PDF.</footer>
+</main>
+</div>
+<script src="guide.js"></script>
+</body>
+</html>
