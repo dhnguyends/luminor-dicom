@@ -10,7 +10,11 @@ guides) and a small API:
     PUT  /api/series/<id>/findings   replace saved findings
 
 All rendering (window/level, MPR, MIP, measurements) happens in the browser on the
-downloaded volume. The server binds to 127.0.0.1 only.
+downloaded volume. The server binds to 127.0.0.1 unless --host is given.
+
+With --public (a shared online demo), visitors cannot change the images folder,
+download from Google Drive or save findings on the server: findings stay in
+each visitor's browser.
 """
 
 from __future__ import annotations
@@ -736,6 +740,8 @@ class Handler(SimpleHTTPRequestHandler):
     # Google Drive downloads: cache folder and the current download
     drive_cache: Path = APP_DIR / "data" / "drive"
     drive_job: DriveJob | None = None
+    # Shared online demo: read-only library, findings kept in each visitor's browser
+    public = False
 
     @classmethod
     def set_data_folder(cls, data: Path, labels: Path | None = None) -> Catalog:
@@ -808,7 +814,8 @@ class Handler(SimpleHTTPRequestHandler):
     def _same_origin(self) -> bool:
         """Refuse requests sent by web pages from other sites (they carry their own Origin)."""
         origin = self.headers.get("Origin")
-        return origin is None or origin == f"http://{self.headers.get('Host')}"
+        host = self.headers.get("Host")
+        return origin is None or origin in (f"http://{host}", f"https://{host}")
 
     def _read_json_body(self, limit: int):
         if not (self.headers.get("Content-Type") or "").startswith("application/json"):
@@ -822,7 +829,8 @@ class Handler(SimpleHTTPRequestHandler):
         return {
             "path": str(self.catalog.root),
             "series": len(self.catalog.ids),
-            "browse": self.browse_folder is not None,
+            "browse": self.browse_folder is not None and not self.public,
+            "public": self.public,
         }
 
     # -- verbs ---------------------------------------------------------------
@@ -862,6 +870,8 @@ class Handler(SimpleHTTPRequestHandler):
         if not self._same_origin():
             return self._json({"error": "Forbidden"}, HTTPStatus.FORBIDDEN)
         endpoint = self._endpoint()
+        if self.public:  # nothing on a shared demo server may be changed by visitors
+            return self._json({"error": "public"}, HTTPStatus.FORBIDDEN)
         try:
             body = self._read_json_body(64_000)
         except ValueError as exc:
@@ -915,6 +925,8 @@ class Handler(SimpleHTTPRequestHandler):
     def do_PUT(self):
         if not self._same_origin():
             return self._json({"error": "Forbidden"}, HTTPStatus.FORBIDDEN)
+        if self.public:
+            return self._json({"error": "public"}, HTTPStatus.FORBIDDEN)
         route = self._route()
         if not route or len(route) != 2 or route[1] != "findings" or not self._valid_sid(route[0]):
             return self._json({"error": "Not found"}, HTTPStatus.NOT_FOUND)
@@ -936,6 +948,8 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _read_findings(self, sid: str):
         f = self.findings_dir / f"{sid}.json"
+        if self.public:
+            return []
         return json.loads(f.read_text(encoding="utf-8")) if f.is_file() else []
 
     def _send_document(self, folder_id: str, index: int):
@@ -965,16 +979,20 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 def create_server(
-    data: Path, labels: Path | None = None, port: int = 8770, findings_dir: Path | None = None
+    data: Path, labels: Path | None = None, port: int = 8770, findings_dir: Path | None = None,
+    host: str = "127.0.0.1", public: bool = False,
 ) -> ThreadingHTTPServer:
-    """Build the HTTP server on 127.0.0.1 (port 0 picks a free port); call serve_forever()."""
+    """Build the HTTP server (port 0 picks a free port); call serve_forever()."""
     catalog = Handler.set_data_folder(Path(data), labels)
     if not catalog.ids:
         print(f"[luminor] warning: no series found in {data}", file=sys.stderr)
     if findings_dir is not None:
         Handler.findings_dir = Path(findings_dir)
 
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    Handler.public = public
+    if public:
+        Handler.browse_folder = None
+    server = ThreadingHTTPServer((host, port), Handler)
     server.daemon_threads = True
     print(f"[luminor] {len(catalog.ids)} series in {catalog.root}")
     return server
@@ -985,10 +1003,14 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8770)
     parser.add_argument("--data", type=Path, default=DEFAULT_DATA, help="folder of series sub-folders")
     parser.add_argument("--labels", type=Path, default=DEFAULT_LABELS, help="optional id,cancer CSV")
+    parser.add_argument("--host", default="127.0.0.1", help="address to listen on (0.0.0.0 for a container)")
+    parser.add_argument("--public", action="store_true",
+                        help="shared online demo: read-only library, findings kept in the browser")
     args = parser.parse_args()
 
-    server = create_server(args.data, args.labels, args.port)
-    print(f"[luminor] Luminor running at http://127.0.0.1:{server.server_port}/", flush=True)
+    server = create_server(args.data, args.labels, args.port, host=args.host, public=args.public)
+    mode = " (public mode)" if args.public else ""
+    print(f"[luminor] Luminor running at http://{args.host}:{server.server_port}/{mode}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

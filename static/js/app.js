@@ -58,7 +58,7 @@ const state = {
   active: null,
   maximized: null,
   cine: { playing: false, fps: 12, last: 0 },
-  folder: { path: '', series: 0, browse: false },
+  folder: { path: '', series: 0, browse: false, public: false },
 };
 
 // ---------------------------------------------------------------------------
@@ -525,6 +525,11 @@ function saveFindings() {
   const sid = state.primary?.id;
   const data = state.findings.map(({ vp, ...f }) => f);
   clearTimeout(saveTimer);
+  if (state.folder.public) {  // shared online demo: findings stay in this browser
+    try { localStorage.setItem(`luminor.findings.${sid}`, JSON.stringify(data)); }
+    catch (err) { toast(t('toast.saveFail', { msg: err.message }), true); }
+    return;
+  }
   saveTimer = setTimeout(async () => {
     try {
       const r = await fetch(`/api/series/${encodeURIComponent(sid)}/findings`, {
@@ -678,10 +683,19 @@ async function loadFolderInfo() {
 
 function folderName(path) {
   const parts = path.split(/[\\/]+/).filter(Boolean);
-  return parts.slice(-2).join('\\') || path || '—';
+  return parts.slice(-2).join(path.includes('\\') ? '\\' : '/') || path || '—';
+}
+
+async function loadFindings(id) {
+  if (state.folder.public) {
+    try { return JSON.parse(localStorage.getItem(`luminor.findings.${id}`) || '[]'); } catch { return []; }
+  }
+  const r = await fetch(`/api/series/${encodeURIComponent(id)}/findings`);
+  return r.ok ? r.json() : [];
 }
 
 function renderFolder() {
+  $('change-folder').hidden = !!state.folder.public;
   const name = $('folder-name');
   name.textContent = state.folder.path ? folderName(state.folder.path) : '—';
   name.title = state.folder.path;
@@ -888,8 +902,7 @@ async function openPrimary(id, { quiet = false, at = null } = {}) {
     state.draft = null;
     for (const vp of [vps.main, vps.cor, vps.sag]) vp.resetView();
     if (state.prior?.id === id) { state.prior = null; }
-    const fr = await fetch(`/api/series/${encodeURIComponent(id)}/findings`);
-    state.findings = fr.ok ? await fr.json() : [];
+    state.findings = await loadFindings(id);
     try { localStorage.setItem('radio.last', id); } catch { /* storage unavailable */ }
     applyDefaultWindow(vol);
     renderSeriesInfo();
@@ -1212,7 +1225,7 @@ async function init() {
   setActive(vps.main);
   if (window.innerWidth < 1280) $('app').classList.add('no-inspector');
   if (window.innerWidth < 1000) $('app').classList.add('no-sidebar');
-  loadFolderInfo();
+  await loadFolderInfo();
   try {
     const series = await loadCatalog();
     let last = null;

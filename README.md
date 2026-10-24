@@ -8,7 +8,10 @@ Python server reads the DICOM files, and a fast browser app does everything else
 
 **[Introduction](https://dhnguyends.github.io/luminor-dicom/)** ·
 **[User guide](https://dhnguyends.github.io/luminor-dicom/guide.html)** ·
-**[Guide utilisateur (français)](https://dhnguyends.github.io/luminor-dicom/guide-fr.html)**
+**[Guide utilisateur (français)](https://dhnguyends.github.io/luminor-dicom/guide-fr.html)** ·
+**[Live demo](https://huggingface.co/spaces/dhnguyen68/luminor)** (Hugging Face Spaces, anonymized LIDC-IDRI chest CTs)
+
+The online demo runs `server.py --public`: a read-only library, with findings kept in each visitor's browser. The `huggingface/` folder holds its Dockerfile and data download script.
 
 ![Luminor showing the series library, an axial chest CT in lung window and the inspector](docs/guide-assets/overview.jpg)
 
