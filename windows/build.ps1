@@ -6,7 +6,7 @@ param([string]$Python = "$env:USERPROFILE\anaconda3\envs\luminor-build\python.ex
 $ErrorActionPreference = "Stop"
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $here
-$version = "1.1"
+$version = "1.2"
 
 if (-not (Test-Path $Python)) { throw "Python not found: $Python (create the luminor-build environment first)" }
 

@@ -29,7 +29,7 @@ Nothing else is needed: Python and all libraries are included.
 
 ## Install
 
-1. Download **[`Luminor-1.1-win64.zip`](https://github.com/dhnguyends/luminor-dicom-windows/releases/download/v1.1/Luminor-1.1-win64.zip)**
+1. Download **[`Luminor-1.2-win64.zip`](https://github.com/dhnguyends/luminor-dicom-windows/releases/download/v1.2/Luminor-1.2-win64.zip)**
    from the [releases page](https://github.com/dhnguyends/luminor-dicom-windows/releases).
 2. Right-click the zip → **Extract All…** and choose a folder you own, for example
    `C:\Users\<you>\Apps\Luminor` or `D:\Apps\Luminor`.
@@ -192,7 +192,7 @@ powershell -ExecutionPolicy Bypass -File build.ps1
 Output in `windows\dist\` (not committed to Git):
 
 - `Luminor\Luminor.exe` with its `_internal\` folder, `Choose data folder.cmd` and this README;
-- `Luminor-1.1-win64.zip`, ready to share.
+- `Luminor-1.2-win64.zip`, ready to share.
 
 ### Files in this folder
 

@@ -30,7 +30,7 @@ import webbrowser
 from pathlib import Path
 
 APP_NAME = "Luminor"
-VERSION = "1.1"
+VERSION = "1.2"
 USER_DIR = Path(os.environ.get("APPDATA") or Path.home()) / APP_NAME
 CONFIG_FILE = USER_DIR / "config.json"
 LOG_FILE = USER_DIR / "luminor.log"
