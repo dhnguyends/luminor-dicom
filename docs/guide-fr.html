@@ -90,6 +90,9 @@
   <li><strong>Toutes · Cancer · Sans cancer</strong> filtre selon l’étiquette du jeu de données. Les lignes portent une pastille rouge <em>Cancer</em> ou grise <em>Négatif</em>.</li>
   <li>Le nombre d’images s’affiche dès que les dossiers ont été comptés. En attendant, la ligne indique <em>Comptage…</em>.</li>
   <li>Au démarrage suivant, Luminor rouvre la dernière série consultée.</li>
+  <li><strong>Les examens à plusieurs séries</strong> (reconstructions osseuse et tissus mous, série coronale, séquences d’IRM…) affichent une <strong>barre de séries</strong> au-dessus des images : <strong>‹ Précédente</strong> et <strong>Suivante ›</strong> (ou <kbd>P</kbd> / <kbd>N</kbd>) passent d’une série à l’autre, la liste déroulante permet d’aller directement à l’une d’elles, et le compteur indique la position (par exemple 2 / 3). Luminor conserve la même position anatomique lors du changement, ou la coupe la plus proche si l’autre série ne la couvre pas.</li>
+  <li>Luminor affiche les <strong>volumes de scanner et d’IRM</strong> (y compris le DICOM compressé et l’IRM multi-images) et les <strong>images 2D</strong> : images et boucles d’échographie, captures d’écran, topogrammes. Les images 2D s’affichent une par une avec les mêmes outils (défilement, zoom, luminosité/contraste, mesures), sans reconstructions, coupes épaisses ni repères d’orientation. Les longueurs sont en mm si l’image est calibrée, sinon en pixels.</li>
+  <li>Les <strong>comptes rendus PDF</strong> de l’examen apparaissent sous forme de boutons <strong>Compte rendu (PDF)</strong> dans la barre de séries et s’ouvrent dans un nouvel onglet.</li>
 </ul>
 
 <h3 id="folder">Changer de dossier d’images</h3>
@@ -364,6 +367,7 @@
     <tr><td><kbd>R</kbd></td><td>Réinitialiser le zoom et le déplacement</td></tr>
     <tr><td><kbd>A</kbd> · <kbd>C</kbd> · <kbd>S</kbd></td><td>Axial · coronal · sagittal</td></tr>
     <tr><td><kbd>L</kbd></td><td>Changer de disposition : Simple → MPR → Comparaison</td></tr>
+    <tr><td><kbd>N</kbd> / <kbd>P</kbd></td><td>Série suivante / précédente de l’examen</td></tr>
     <tr><td><kbd>T</kbd></td><td>Coupe épaisse : aucune → MIP → MinIP → moyenne</td></tr>
     <tr><td><kbd>+</kbd> / <kbd>−</kbd></td><td>Épaisseur de coupe ± 2 mm</td></tr>
     <tr><td><kbd>X</kbd> · <kbd>W</kbd> · <kbd>H</kbd> · <kbd>Z</kbd></td><td>Outil réticule · fenêtrage · déplacement · zoom</td></tr>

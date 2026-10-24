@@ -149,15 +149,26 @@ Hounsfield units). Its whole job is to find series, read them, and hand them to 
 - **`path()`:** converts a series ID to its folder, accepting only IDs that are in the catalog.
   This is part of what stops requests from reaching other files on disk.
 
-**`load_series()` — reading a CT series**
+**`scan_parts()` — finding the series of an exam folder**
 
-1. Reads all slices with 8 threads in parallel.
-2. Sorts them by physical position (`ImagePositionPatient`), inferior to superior, rather than by
-   instance number.
-3. Converts each slice to Hounsfield units with its own rescale slope and intercept; padding
-   values become air.
-4. Measures the true slice spacing from the positions, then builds the metadata the browser needs:
-   shape, spacing, slice positions, origin, orientation, HU range and a few DICOM tags.
+A hospital exam folder often holds several series plus other files. A quick header-only pass
+groups the grey-scale images by series, image size and orientation into **parts**, each a
+stackable volume: CT first, then MRI, axial before other planes, largest first. A multi-frame
+file (enhanced MRI) is a part of its own. Single images (scout views, dose pages), colour
+captures (ultrasound, screenshots), reports and annotations are skipped. Part 0 opens with the
+folder's id; part N opens as `<folder>~N`.
+
+**`load_part()` — reading one volume**
+
+1. Reads the slices (or the frames of a multi-frame file) with 8 threads in parallel. JPEG-LS is
+   decoded with CharLS (`pyjpegls`) when installed; JPEG, JPEG 2000 and RLE use pylibjpeg.
+2. Sorts them along the slice normal (computed from `ImageOrientationPatient`), so axial,
+   coronal, sagittal and oblique acquisitions all stack correctly; repeated positions (diffusion
+   b-values, echoes) keep one image.
+3. Applies each slice's rescale slope and intercept: Hounsfield units for CT, raw intensities for
+   MRI (with a suggested `window` from the 1st–99.5th percentiles, and `unit` empty).
+4. Measures the true slice spacing, then builds the metadata the browser needs: shape, spacing,
+   slice positions, origin, orientation, value range, unit and the list of parts.
 
 **`VolumeCache` — memory cache**
 
@@ -175,7 +186,7 @@ Hounsfield units). Its whole job is to find series, read them, and hand them to 
   | Request | Answer |
   |---|---|
   | `GET /api/series` | The catalog: ID, image count, label |
-  | `GET /api/series/<id>/meta` | Geometry and metadata (loads the series if needed) |
+  | `GET /api/series/<id>/meta` | Geometry and metadata (loads the series if needed), plus `parts`: the exam's other series, opened as `<id>~N` |
   | `GET /api/series/<id>/volume` | The raw volume, 16-bit HU values (`int16`), sent in 1 MB chunks |
   | `GET` / `PUT /api/series/<id>/findings` | Read or replace the saved findings (JSON list) |
   | `GET` / `POST /api/data-folder` | Current images folder; POST `{"path": …}` switches to another folder (validated, labels found automatically) |

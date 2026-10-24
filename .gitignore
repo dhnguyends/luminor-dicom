@@ -17,3 +17,7 @@ venv/
 Thumbs.db
 .vscode/
 .idea/
+
+# Windows build output (rebuild with windows/build.ps1)
+windows/dist/
+windows/build/

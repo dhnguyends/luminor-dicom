@@ -50,7 +50,7 @@ Then open **http://127.0.0.1:8770/** in Chrome, Edge, Safari or Firefox.
 
 | Option | Effect |
 |---|---|
-| `--data FOLDER` | Folder containing one sub-folder of `.dcm` files per CT series. |
+| `--data FOLDER` | Folder containing one sub-folder per CT/MRI exam or series. An exam folder may hold several series (selectable in the app); compressed DICOM and multi-frame MRI are supported, ultrasound and reports are skipped. |
 | `--labels FILE.csv` | Optional `id,cancer` CSV, shown as labels and filters in the library. |
 | `--port N` | Port to listen on (default 8770). |
 
@@ -68,6 +68,14 @@ are required), extract `stage1`, then run:
 ```bash
 python server.py --data /path/to/stage1 --labels /path/to/stage1_labels.csv
 ```
+
+## Windows desktop app
+
+Luminor can also run as a normal Windows application (`Luminor.exe`, no Python needed): it
+opens in its own window, asks for your images folder on first launch, and keeps settings and
+findings in `%APPDATA%\Luminor`. The [`windows/`](windows/) folder holds the launcher, the
+build recipe and the [installation guide](windows/README.md); build it with
+`windowsuild.ps1` (see *Building from source* in that guide).
 
 ## Documentation
 
@@ -101,6 +109,7 @@ static/js/viewport.js   canvas rendering, transforms, crosshair, overlays, HUD
 static/js/app.js        state, layouts, tools, findings, comparison, cine, keyboard
 static/js/i18n.js       English and French strings, locale-aware number formatting
 docs/                   introduction pages and user guides (GitHub Pages)
+windows/                Windows desktop app: launcher (app window), PyInstaller recipe, build script
 data/findings/          saved findings, one JSON file per series (created at runtime)
 ```
 
@@ -115,7 +124,7 @@ dependencies.
 | Method | Path | Returns |
 |---|---|---|
 | GET | `/api/series` | catalog: id, slice count, label |
-| GET | `/api/series/<id>/meta` | shape, spacing, z positions, orientation, HU range |
+| GET | `/api/series/<id>/meta` | shape, spacing, z positions, orientation, value range, unit, and the exam's other `parts` (series); `<id>~N` opens series N |
 | GET | `/api/series/<id>/volume` | `int16` little-endian volume, C order (z, y, x) |
 | GET / PUT | `/api/series/<id>/findings` | saved findings (JSON list) |
 | GET / POST | `/api/data-folder` | current images folder; POST `{"path": …}` switches to another one |

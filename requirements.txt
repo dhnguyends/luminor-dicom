@@ -1,3 +1,10 @@
 # Luminor server (the viewer itself runs in the browser, no build step)
 numpy>=1.24
 pydicom>=2.4
+
+# Decoders for compressed DICOM, common in hospital exports
+pyjpegls>=1.2            # JPEG-LS via CharLS (fast)
+pylibjpeg>=2.0           # plugin framework used by pydicom
+pylibjpeg-libjpeg>=2.1   # JPEG baseline/lossless and JPEG-LS (fallback)
+pylibjpeg-openjpeg>=2.3  # JPEG 2000
+pylibjpeg-rle>=2.0       # RLE Lossless

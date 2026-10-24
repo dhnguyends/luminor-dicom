@@ -55,6 +55,17 @@
       <button class="tb-btn" id="toggle-inspector" data-i18n-title="toolbar.inspector" data-i18n-aria="toolbar.inspector"><span data-icon="inspector"></span></button>
     </header>
 
+    <!-- Series navigation: shown only when the exam holds several series -->
+    <div class="series-bar" id="part-nav" role="group" data-i18n-aria="parts.aria" hidden>
+      <span class="series-bar-label"><span data-icon="layers"></span><span data-i18n="parts.label">Series in this exam</span></span>
+      <button class="btn small part-step" id="part-prev" data-i18n-title="parts.prev"><span data-icon="chevronLeft"></span><span data-i18n="parts.prevShort">Previous</span></button>
+      <select class="part-select" id="part-select" data-i18n-aria="parts.aria"></select>
+      <span class="part-count" id="part-count"></span>
+      <button class="btn small part-step" id="part-next" data-i18n-title="parts.next"><span data-i18n="parts.nextShort">Next</span><span data-icon="chevronRight"></span></button>
+      <span class="part-docs" id="part-docs"></span>
+      <span class="series-bar-hint"><kbd>P</kbd> <kbd>N</kbd></span>
+    </div>
+
     <section class="stage layout-single" id="stage">
       <div class="vp" id="vp-main"></div>
       <div class="vp" id="vp-cor"></div>

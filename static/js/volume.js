@@ -12,7 +12,10 @@ export class Volume {
   constructor(meta, buffer) {
     this.meta = meta;
     this.id = meta.id;
-    this.data = new Int16Array(buffer);
+    // "volume": int16 grey values (HU for CT). "images": 2D images, uint8 RGB, shown one by one.
+    this.kind = meta.kind || 'volume';
+    this.rgb = !!meta.rgb;
+    this.data = this.rgb ? new Uint8Array(buffer) : new Int16Array(buffer);
     [this.nz, this.ny, this.nx] = meta.shape;
     [this.sz, this.sy, this.sx] = meta.spacing;
     this.zpos = meta.z_positions;
@@ -21,9 +24,31 @@ export class Volume {
     this._tmp = null;
   }
 
+  /** 2D images (ultrasound, screenshots, scout views): no reformats, slabs or orientation. */
+  get isImages() { return this.kind === 'images'; }
+
+  /** Unit of lengths: mm when the images are calibrated, otherwise pixels. */
+  get lengthUnit() { return this.meta.calibrated === false ? 'px' : 'mm'; }
+
+  /** Grey value (HU for CT); for colour images, the luminance 0-255. */
   value(z, y, x) {
     if (z < 0 || y < 0 || x < 0 || z >= this.nz || y >= this.ny || x >= this.nx) return null;
+    if (this.rgb) {
+      const [r, g, b] = this.rgbAt(z, y, x);
+      return Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+    }
     return this.data[(z * this.ny + y) * this.nx + x];
+  }
+
+  rgbAt(z, y, x) {
+    const i = ((z * this.ny + y) * this.nx + x) * 3;
+    return [this.data[i], this.data[i + 1], this.data[i + 2]];
+  }
+
+  /** RGB bytes of one image (colour volumes only). */
+  readRGB(index) {
+    const n = this.ny * this.nx * 3;
+    return this.data.subarray(index * n, (index + 1) * n);
   }
 
   /** Width/height in pixels, pixel size in mm, number of slices and slice spacing. */
@@ -70,20 +95,42 @@ export class Volume {
     return Math.max(0, Math.min(g.depth - 1, i));
   }
 
-  /** Patient (LPS) coordinates in mm of a voxel. */
+  /** Unit vector normal to the acquired slices (direction of increasing slice index). */
+  get normal() { return sliceNormal(this.orientation); }
+
+  /** Patient (LPS) coordinates in mm of a voxel, for any slice orientation. */
   patientMM([z, y, x]) {
     const [rx, ry, rz, cx, cy, cz] = this.orientation;
-    const [ox, oy] = this.origin;
-    return [
-      ox + x * this.sx * rx + y * this.sy * cx,
-      oy + x * this.sx * ry + y * this.sy * cy,
-      this.zpos[Math.max(0, Math.min(this.nz - 1, Math.round(z)))],
-    ];
+    const n = this.normal;
+    const k = Math.max(0, Math.min(this.nz - 1, Math.round(z)));
+    const d = this.zpos[k] - this.zpos[0]; // distance along the normal from the first slice
+    return [0, 1, 2].map(i =>
+      this.origin[i] + x * this.sx * [rx, ry, rz][i] + y * this.sy * [cx, cy, cz][i] + d * n[i]);
+  }
+
+  /** Voxel [z, y, x] nearest to a patient (LPS) position in mm, clamped to the volume. */
+  voxelAtMM(p) {
+    const row = this.orientation.slice(0, 3), col = this.orientation.slice(3, 6), n = this.normal;
+    const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const proj = dot(p, n);
+    let k = 0;
+    for (let i = 1; i < this.nz; i++) if (Math.abs(this.zpos[i] - proj) < Math.abs(this.zpos[k] - proj)) k = i;
+    const d = this.zpos[k] - this.zpos[0];
+    const rel = [0, 1, 2].map(i => p[i] - this.origin[i] - d * n[i]);
+    const clamp = (v, max) => Math.max(0, Math.min(max - 1, Math.round(v)));
+    return [k, clamp(dot(rel, col) / this.sy, this.ny), clamp(dot(rel, row) / this.sx, this.nx)];
   }
 
   /** Copy one plane slice into ``out`` (Int16Array of w*h). */
   readPlane(plane, index, out) {
     const { nx, ny, nz, data } = this;
+    if (this.rgb) { // images: one image at a time, as luminance (for statistics)
+      const rgb = this.readRGB(index);
+      for (let i = 0, j = 0; i < out.length; i++, j += 3) {
+        out[i] = Math.round(0.299 * rgb[j] + 0.587 * rgb[j + 1] + 0.114 * rgb[j + 2]);
+      }
+      return out;
+    }
     if (plane === 'axial') {
       out.set(data.subarray(index * ny * nx, (index + 1) * ny * nx));
     } else if (plane === 'coronal') {
@@ -181,13 +228,44 @@ function letter(v) {
 }
 const opposite = { R: 'L', L: 'R', A: 'P', P: 'A', S: 'I', I: 'S' };
 
-/** Edge markers {left, right, top, bottom} for a plane. */
+/**
+ * What a view really shows in the patient: anatomical plane name, the LPS axis normal to it,
+ * and the slice's position along that axis (mm). For axial acquisitions this matches the view
+ * names; for coronal or sagittal acquisitions the main view is, e.g., anatomically coronal.
+ */
+export function viewAnatomy(volume, plane, index) {
+  const iop = volume.orientation;
+  const normal = plane === 'axial' ? sliceNormal(iop) : plane === 'coronal' ? iop.slice(3, 6) : iop.slice(0, 3);
+  const a = normal.map(Math.abs);
+  const axis = a.indexOf(Math.max(...a)); // 0 = x (sagittal), 1 = y (coronal), 2 = z (axial)
+  const g = volume.geometry(plane);
+  const centre = volume.toVoxel(plane, index, Math.floor(g.h / 2), Math.floor(g.w / 2));
+  return {
+    name: ['sagittal', 'coronal', 'axial'][axis],
+    axis: ['X', 'Y', 'Z'][axis],
+    pos: volume.patientMM(centre)[axis],
+  };
+}
+
+export function sliceNormal(iop) {
+  const [rx, ry, rz, cx, cy, cz] = iop;
+  const n = [ry * cz - rz * cy, rz * cx - rx * cz, rx * cy - ry * cx];
+  const len = Math.hypot(...n) || 1;
+  return n.map(v => v / len);
+}
+
+/**
+ * Edge markers {left, right, top, bottom} for a view.
+ * "axial" is the acquired plane; the two reformats put the last slice (the +normal side) at
+ * the top, so this also holds for coronal, sagittal or oblique acquisitions.
+ */
 export function orientationMarkers(volume, plane) {
   const row = volume.orientation.slice(0, 3); // direction of increasing column index (x)
   const col = volume.orientation.slice(3, 6); // direction of increasing row index (y)
+  const top = letter(sliceNormal(volume.orientation));
   let right, bottom;
   if (plane === 'axial') { right = letter(row); bottom = letter(col); }
-  else if (plane === 'coronal') { right = letter(row); bottom = 'I'; }
-  else { right = letter(col); bottom = 'I'; }
+  else if (plane === 'coronal') { right = letter(row); bottom = opposite[top]; }
+  else { right = letter(col); bottom = opposite[top]; }
   return { right, left: opposite[right], bottom, top: opposite[bottom] };
 }

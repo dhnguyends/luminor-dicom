@@ -1,5 +1,5 @@
 // One image pane: canvas rendering, screen <-> image transforms, overlays and HUD.
-import { orientationMarkers } from './volume.js';
+import { orientationMarkers, viewAnatomy } from './volume.js';
 import { t as tr, fmt } from './i18n.js'; // 't' is used for canvas transforms here
 
 export const PLANE_COLORS = { axial: '#0A84FF', coronal: '#30D158', sagittal: '#FF9F0A' };
@@ -109,6 +109,7 @@ export class Viewport {
     if (key === this._key) return;
     this._key = key;
     const g = this.geometry;
+    if (this.volume.rgb) return this._updateRGB(g, lut);
     const { pixels, slices } = this.volume.render(this.plane, this.index, slab.mode, slab.mm);
     this.slabSlices = slices;
     if (this.off.width !== g.w || this.off.height !== g.h) {
@@ -118,6 +119,24 @@ export class Viewport {
     }
     const out = new Uint32Array(this._imageData.data.buffer);
     for (let i = 0; i < pixels.length; i++) out[i] = lut[pixels[i] + 32768];
+    this.offCtx.putImageData(this._imageData, 0, 0);
+  }
+
+  /** Colour image: the window/level acts as brightness/contrast on each channel. */
+  _updateRGB(g, lut) {
+    this.slabSlices = 1;
+    if (this.off.width !== g.w || this.off.height !== g.h) {
+      this.off.width = g.w;
+      this.off.height = g.h;
+      this._imageData = this.offCtx.createImageData(g.w, g.h);
+    }
+    const map = new Uint8Array(256);
+    for (let v = 0; v < 256; v++) map[v] = lut[v + 32768] & 0xff;
+    const rgb = this.volume.readRGB(this.index);
+    const d = this._imageData.data;
+    for (let i = 0, j = 0; i < d.length; i += 4, j += 3) {
+      d[i] = map[rgb[j]]; d[i + 1] = map[rgb[j + 1]]; d[i + 2] = map[rgb[j + 2]]; d[i + 3] = 255;
+    }
     this.offCtx.putImageData(this._imageData, 0, 0);
   }
 
@@ -197,7 +216,7 @@ export class Viewport {
       ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
       ctx.setLineDash([]);
       for (const p of [a, b]) { ctx.beginPath(); ctx.arc(p[0], p[1], 3, 0, Math.PI * 2); ctx.fill(); }
-      lines = [`${fmt(f.value.mm, 1)} mm`];
+      lines = [`${fmt(f.value.mm, 1)} ${this.volume.lengthUnit}`];
       anchor = a[1] < b[1] ? b : a;
     } else if (f.type === 'ellipse') {
       const b = this.toScreen(f.p2, t);
@@ -205,14 +224,14 @@ export class Viewport {
       ctx.ellipse((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, Math.abs(b[0] - a[0]) / 2, Math.abs(b[1] - a[1]) / 2, 0, 0, Math.PI * 2);
       ctx.stroke();
       const s = f.value;
-      const hu = tr('unit.hu');
-      if (s) lines = [`${Math.round(s.mean)} ± ${Math.round(s.sd)} ${hu}`, `${s.min} / ${s.max} ${hu}`, formatArea(s.areaMM2)];
+      const u = unitSuffix(this.volume);
+      if (s) lines = [`${Math.round(s.mean)} ± ${Math.round(s.sd)}${u}`, `${s.min} / ${s.max}${u}`, formatArea(s.areaMM2, this.volume.lengthUnit)];
       anchor = [Math.max(a[0], b[0]), Math.max(a[1], b[1])];
     } else {
       ctx.setLineDash([]);
       ctx.beginPath(); ctx.arc(a[0], a[1], 7, 0, Math.PI * 2); ctx.stroke();
       ctx.beginPath(); ctx.arc(a[0], a[1], 1.8, 0, Math.PI * 2); ctx.fill();
-      lines = f.value?.hu != null ? [`${f.value.hu} ${tr('unit.hu')}`] : [];
+      lines = f.value?.hu != null ? [`${f.value.hu}${unitSuffix(this.volume)}`] : [];
       anchor = [a[0] + 6, a[1] + 6];
     }
     ctx.restore();
@@ -248,12 +267,13 @@ export class Viewport {
     for (const k in this.orient) this.orient[k].textContent = '';
     if (!v || !scene) return;
     const g = this.geometry;
-    const pos = v.slicePosition(this.plane, this.index);
+    if (v.isImages) return this._hudImages(scene);
+    const anat = viewAnatomy(v, this.plane, this.index);
     const dot = `<i style="background:${PLANE_COLORS[this.plane]}"></i>`;
     this.hud.tl.innerHTML =
-      `<b>${dot}${tr(`plane.${this.plane}`)}${this.badge ? `<span class="badge">${tr(this.badge)}</span>` : ''}</b>` +
+      `<b>${dot}${tr(`plane.${anat.name}`)}${this.badge ? `<span class="badge">${tr(this.badge)}</span>` : ''}</b>` +
       `<span>${tr('hud.im')} ${this.index + 1} / ${g.depth}</span>` +
-      `<span>${this.plane === 'axial' ? 'Z' : this.plane === 'coronal' ? 'Y' : 'X'} ${fmt(pos, 1)} mm</span>`;
+      `<span>${anat.axis} ${fmt(anat.pos, 1)} mm</span>`;
     const slab = scene.slab.mode !== 'none' && this.slabSlices > 1
       ? `<span class="accent">${tr(`hud.slab.${scene.slab.mode}`)} ${fmt(this.slabSlices * g.ds)} mm</span>` : '';
     this.hud.tr.innerHTML =
@@ -262,10 +282,27 @@ export class Viewport {
     this.hud.br.innerHTML = `<span>${Math.round(this.zoom * 100)} %</span>`;
     if (this.probe) {
       const p = this.probe;
-      this.hud.bl.innerHTML = `<span><b>${p.hu} ${tr('unit.hu')}</b></span><span class="dim">x ${p.vox[2]}  y ${p.vox[1]}  z ${p.vox[0]}</span>`;
+      this.hud.bl.innerHTML = `<span><b>${p.hu}${unitSuffix(v)}</b></span><span class="dim">x ${p.vox[2]}  y ${p.vox[1]}  z ${p.vox[0]}</span>`;
     }
     const m = orientationMarkers(v, this.plane);
     for (const k in m) this.orient[k].textContent = tr(`orient.${m[k]}`);
+  }
+
+  /** HUD for 2D images: image number only, no plane, position or orientation letters. */
+  _hudImages(scene) {
+    const v = this.volume;
+    this.hud.tl.innerHTML =
+      `<b>${tr('plane.image')}${this.badge ? `<span class="badge">${tr(this.badge)}</span>` : ''}</b>` +
+      `<span>${tr('hud.im')} ${this.index + 1} / ${v.nz}</span>` +
+      (v.meta.calibrated === false ? `<span class="dim">${tr('hud.uncalibrated')}</span>` : '');
+    this.hud.tr.innerHTML =
+      `<span>${tr('hud.wl', { c: Math.round(scene.wl.c), w: Math.round(scene.wl.w) })}${scene.invert ? ` · ${tr('hud.inv')}` : ''}</span>` +
+      `<span class="dim">${(v.meta.series_description || v.meta.modality || '').slice(0, 24)}</span>`;
+    this.hud.br.innerHTML = `<span>${Math.round(this.zoom * 100)} %</span>`;
+    if (this.probe) {
+      const [r, g, b] = v.rgbAt(...this.probe.vox);
+      this.hud.bl.innerHTML = `<span><b>${tr('hud.rgb')} ${r}, ${g}, ${b}</b></span><span class="dim">x ${this.probe.vox[2]}  y ${this.probe.vox[1]}</span>`;
+    }
   }
 
   // ---- hit testing --------------------------------------------------------
@@ -320,7 +357,13 @@ export class Viewport {
   }
 }
 
-export function formatArea(mm2) {
+/** Unit suffix for pixel values: Hounsfield units for CT, nothing for MRI and others. */
+export function unitSuffix(volume) {
+  return volume?.meta?.unit === '' ? '' : ` ${tr('unit.hu')}`;
+}
+
+export function formatArea(mm2, unit = 'mm') {
+  if (unit === 'px') return `${fmt(mm2)} px²`;
   return mm2 >= 100 ? `${fmt(mm2 / 100, 2)} cm²` : `${fmt(mm2, 1)} mm²`;
 }
 

@@ -1,6 +1,6 @@
 // Luminor — application state, layouts, tools, findings and UI wiring.
-import { Volume } from './volume.js';
-import { Viewport, formatArea } from './viewport.js';
+import { Volume, viewAnatomy } from './volume.js';
+import { Viewport, formatArea, unitSuffix } from './viewport.js';
 import { icon } from './icons.js';
 import { t, fmt, getLang, setLang, applyStatic, locale } from './i18n.js';
 
@@ -200,7 +200,11 @@ function renderLinkToggle() {
 // ---------------------------------------------------------------------------
 // Layout / plane / tool
 // ---------------------------------------------------------------------------
+/** 2D images (ultrasound, screenshots...) have no reformats or slabs. */
+function imagesOnly() { return !!state.primary?.isImages; }
+
 function setLayout(layout) {
+  if (layout === 'mpr' && imagesOnly()) { toast(t('images.only2d')); return; }
   state.layout = layout;
   state.maximized = null;
   const stage = $('stage');
@@ -213,6 +217,7 @@ function setLayout(layout) {
 }
 
 function setPlane(plane) {
+  if (plane !== 'axial' && imagesOnly()) { toast(t('images.only2d')); return; }
   if (state.layout === 'mpr') setLayout('single');
   if (state.prior) {
     // keep the comparison at the matching relative position in the new plane
@@ -366,10 +371,14 @@ function updateProbe(vp, x, y) {
   const vox = vp.voxelAt(x, y);
   vp.probe = vox ? { vox, hu: vp.volume.value(...vox) } : null;
   vp.invalidate();
-  if (vox) {
+  if (vox && vp.volume.isImages) {
+    const [r, g, b] = vp.volume.rgbAt(...vox);
+    $('status-probe').innerHTML = `<b>${t('hud.rgb')} ${r}, ${g}, ${b}</b><span class="sep"></span>x ${vox[2]}, y ${vox[1]}` +
+      `<span class="sep"></span>${t('hud.im')} ${vox[0] + 1}`;
+  } else if (vox) {
     const mm = vp.volume.patientMM(vox);
     $('status-probe').innerHTML =
-      `<b>${vp.probe.hu} ${t('unit.hu')}</b><span class="sep"></span>voxel ${vox[2]}, ${vox[1]}, ${vox[0]}` +
+      `<b>${vp.probe.hu}${unitSuffix(vp.volume)}</b><span class="sep"></span>voxel ${vox[2]}, ${vox[1]}, ${vox[0]}` +
       `<span class="sep"></span>${mm.map(v => fmt(v, 1)).join(getLang() === 'fr' ? ' ; ' : ', ')} mm (LPS)`;
   }
 }
@@ -455,17 +464,18 @@ function jumpToFinding(f) {
 }
 
 function describeValue(f) {
-  const hu = t('unit.hu');
-  if (f.type === 'length') return `${fmt(f.value.mm, 1)} mm`;
-  if (f.type === 'ellipse') return f.value ? `${Math.round(f.value.mean)} ± ${Math.round(f.value.sd)} ${hu} · ${formatArea(f.value.areaMM2)}` : '—';
-  return f.value?.hu != null ? `${f.value.hu} ${hu}` : '';
+  const u = unitSuffix(state.primary);
+  const lu = state.primary?.lengthUnit || 'mm';
+  if (f.type === 'length') return `${fmt(f.value.mm, 1)} ${lu}`;
+  if (f.type === 'ellipse') return f.value ? `${Math.round(f.value.mean)} ± ${Math.round(f.value.sd)}${u} · ${formatArea(f.value.areaMM2, lu)}` : '—';
+  return f.value?.hu != null ? `${f.value.hu}${u}` : '';
 }
 
 function describeLocation(f) {
-  const v = state.primary;
-  const axis = f.plane === 'axial' ? 'Z' : f.plane === 'coronal' ? 'Y' : 'X';
+  if (state.primary?.isImages) return t('findings.locationImage', { n: f.index + 1 });
+  const anat = viewAnatomy(state.primary, f.plane, f.index);
   return t('findings.location', {
-    plane: t(`plane.${f.plane}`), n: f.index + 1, axis, pos: fmt(v.slicePosition(f.plane, f.index), 1),
+    plane: t(`plane.${anat.name}`), n: f.index + 1, axis: anat.axis, pos: fmt(anat.pos, 1),
   });
 }
 
@@ -517,7 +527,7 @@ function saveFindings() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     try {
-      const r = await fetch(`/api/series/${sid}/findings`, {
+      const r = await fetch(`/api/series/${encodeURIComponent(sid)}/findings`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
       });
       if (!r.ok) throw new Error((await r.json()).error);
@@ -532,7 +542,7 @@ function buildReport() {
   const v = state.primary;
   const m = v.meta;
   const L = t('report.md');
-  const hu = t('unit.hu');
+  const u = unitSuffix(v);
   const date = new Date().toLocaleString(locale());
   const lines = [
     `# ${L.title}`,
@@ -543,7 +553,7 @@ function buildReport() {
     `- **${L.generated} :** ${date} ${L.with}`,
     ``,
     `## ${L.technique}`,
-    L.techniqueText.replace('{mm}', fmt(m.spacing[0], 1)),
+    (m.kind === 'images' ? L.techniqueImages : L.techniqueText).replace('{modality}', m.modality || 'CT').replace('{n}', m.shape[0]).replace('{mm}', fmt(m.spacing[0], 1)),
     ``,
     `## ${L.findings}`,
   ];
@@ -554,7 +564,7 @@ function buildReport() {
     const sep = getLang() === 'fr' ? ' : ' : ': ';
     lines.push(`${i + 1}. **${f.label}** — ${kind}${sep}${describeValue(f)} (${describeLocation(f)})`);
     if (f.type === 'ellipse' && f.value) {
-      lines.push(`   - ${L.minmax.replace('{min}', f.value.min).replace('{max}', f.value.max).replace('{n}', f.value.n).replace(' HU', ` ${hu}`)}`);
+      lines.push(`   - ${L.minmax.replace('{min}', f.value.min).replace('{max}', f.value.max).replace('{n}', f.value.n).replace(/ (HU|UH),/, `${u},`)}`);
     }
   });
   lines.push('', `## ${L.impression}`, '', L.impressionText, '', '---', L.disclaimer);
@@ -621,13 +631,13 @@ function labelTag(label) {
 function renderLibrary() {
   const q = state.query.toLowerCase();
   const items = state.catalog.filter(s =>
-    (!q || s.id.includes(q)) && (state.filter === 'all' || String(s.label) === state.filter));
+    (!q || s.id.toLowerCase().includes(q)) && (state.filter === 'all' || String(s.label) === state.filter));
   $('series-count').textContent = t('library.count', { n: fmt(items.length), total: fmt(state.catalog.length) });
   const html = items.slice(0, 400).map(s => {
-    const cur = s.id === state.primary?.id, pri = s.id === state.prior?.id;
-    return `<div class="series ${cur ? 'current' : ''} ${pri ? 'prior' : ''}" data-id="${s.id}" role="option" aria-selected="${cur}" tabindex="0">
+    const cur = s.id === baseId(state.primary?.id), pri = s.id === baseId(state.prior?.id);
+    return `<div class="series ${cur ? 'current' : ''} ${pri ? 'prior' : ''}" data-id="${escapeHtml(s.id)}" role="option" aria-selected="${cur}" tabindex="0">
       <span class="avatar" style="--h:${hue(s.id)}">${s.id.slice(-2).toUpperCase()}</span>
-      <span class="s-body"><strong>${s.id.slice(0, 12)}…</strong>
+      <span class="s-body"><strong title="${escapeHtml(s.id)}">${escapeHtml(s.id)}</strong>
         <span>${s.slices != null ? t('library.images', { n: s.slices }) : t('library.counting')}${pri ? ` · <em>${t('library.comparison')}</em>` : ''}</span></span>
       ${labelTag(s.label)}
       <button class="icon-btn s-compare" title="${t('compare.open')}" aria-label="${t('compare.open')}">${icon('duplicate')}</button>
@@ -725,7 +735,7 @@ async function changeFolder(path) {
     resetViewer();
     const series = await loadCatalog();
     toast(t('toast.folder', { n: fmt(res.series), name: folderName(res.path) }));
-    if (series[0]) openPrimary(series[0].id);
+    openFirstAvailable(series);
   } catch (err) {
     showFolderError('folder.err.other', { msg: err.message });
   } finally {
@@ -780,10 +790,10 @@ async function fetchVolume(id, titleKey) {
   $('loader-text').textContent = t('loader.reading');
   $('loader-bar').style.width = '0%';
   try {
-    const mr = await fetch(`/api/series/${id}/meta`);
+    const mr = await fetch(`/api/series/${encodeURIComponent(id)}/meta`);
     const meta = await mr.json();
     if (!mr.ok) throw new Error(meta.error || mr.statusText);
-    const r = await fetch(`/api/series/${id}/volume`);
+    const r = await fetch(`/api/series/${encodeURIComponent(id)}/volume`);
     if (!r.ok) throw new Error(t('error.volume', { status: r.status }));
     const total = Number(r.headers.get('Content-Length'));
     const buf = new Uint8Array(total);
@@ -804,31 +814,121 @@ async function fetchVolume(id, titleKey) {
   }
 }
 
-async function openPrimary(id) {
-  if (state.primary?.id === id) return;
+async function openPrimary(id, { quiet = false, at = null } = {}) {
+  if (state.primary?.id === id) return true;
   toggleCine(false);
   try {
     const vol = await fetchVolume(id, 'loader.series');
     state.primary = vol;
-    state.cursor = [Math.floor(vol.nz / 2), Math.floor(vol.ny / 2), Math.floor(vol.nx / 2)];
+    // Keep the same anatomical position when moving between series of one exam
+    state.cursor = vol.isImages ? [0, Math.floor(vol.ny / 2), Math.floor(vol.nx / 2)]
+      : at ? vol.voxelAtMM(at) : [Math.floor(vol.nz / 2), Math.floor(vol.ny / 2), Math.floor(vol.nx / 2)];
+    if (vol.isImages) {
+      if (state.layout === 'mpr') { state.layout = 'single'; $('stage').className = 'stage layout-single'; }
+      state.plane = 'axial';
+      if (state.slab.mode !== 'none') setSlabMode('none');
+      renderSegmented();
+    }
     state.selectedId = null;
     state.draft = null;
     for (const vp of [vps.main, vps.cor, vps.sag]) vp.resetView();
     if (state.prior?.id === id) { state.prior = null; }
-    const fr = await fetch(`/api/series/${id}/findings`);
+    const fr = await fetch(`/api/series/${encodeURIComponent(id)}/findings`);
     state.findings = fr.ok ? await fr.json() : [];
     try { localStorage.setItem('radio.last', id); } catch { /* storage unavailable */ }
+    applyDefaultWindow(vol);
     renderSeriesInfo();
     renderFindings();
     renderLibrary();
     if (state.prior) computeLinkOffset();
     setActive(vps.main);
     sync();
-    toast(t('toast.opened', { id: id.slice(0, 10), n: vol.nz }));
+    const parts = vol.meta.parts || [];
+    const part = parts[vol.meta.part || 0];
+    toast(at && part ? t('toast.part', { i: part.index + 1, n: parts.length, desc: part.description || part.modality })
+      : parts.filter(p => p.kind !== 'document').length > 1 ? t('toast.parts', { n: parts.filter(p => p.kind !== 'document').length })
+      : t('toast.opened', { id: (vol.meta.folder || id).slice(0, 24), n: vol.nz }));
+    return true;
   } catch (err) {
-    toast(t('toast.openFail', { msg: err.message }), true);
+    if (!quiet) toast(err.message === 'no_volume' ? t('error.no_volume') : t('toast.openFail', { msg: err.message }), true);
+    return false;
   }
 }
+
+/** Open the first exam that has a displayable volume (skips ultrasound-only folders...). */
+async function openFirstAvailable(series, preferred) {
+  const ids = [preferred, ...series.map(s => s.id)].filter(Boolean);
+  for (const id of [...new Set(ids)].slice(0, 25)) {
+    if (await openPrimary(id, { quiet: true })) return;
+  }
+  toast(t('error.no_volume'), true);
+}
+
+/** Folder id of a series id ("folder~2" is the third series of that exam). */
+function baseId(id) { return id ? id.split('~')[0] : id; }
+
+/**
+ * CT opens with the current preset. Modalities without Hounsfield units (MRI...) open with the
+ * window suggested by the server from their intensity distribution.
+ */
+function applyDefaultWindow(vol) {
+  const w = vol.meta.window;
+  if (w) {
+    setWindow(w[0], w[1], null);
+    state.autoWindow = true;
+  } else if (state.autoWindow) {  // back to CT after an MRI: restore the lung preset
+    state.autoWindow = false;
+    setWindow(PRESETS[0].c, PRESETS[0].w, PRESETS[0].key);
+  }
+}
+
+function renderParts() {
+  const select = $('part-select');
+  const m = state.primary?.meta;
+  const all = m?.parts || [];
+  const parts = all.filter(p => p.kind !== 'document');
+  const docs = all.filter(p => p.kind === 'document');
+  $('part-nav').hidden = parts.length < 2 && !docs.length;
+  const folder = m ? (m.folder || baseId(state.primary.id)) : '';
+  $('part-docs').innerHTML = docs.map((d, i) =>
+    `<a class="btn small" href="/api/series/${encodeURIComponent(folder)}/document/${d.index}" target="_blank" rel="noopener" title="${escapeHtml(t('parts.documentTitle'))}">` +
+    `${icon('report')}<span>${escapeHtml(docs.length > 1 ? `${t('parts.document')} ${i + 1}` : t('parts.document'))}</span></a>`).join('');
+  if ($('part-nav').hidden) return;
+  const current = m.part || 0;
+  $('part-count').textContent = `${current + 1} / ${parts.length}`;
+  $('part-prev').disabled = current <= 0;
+  $('part-next').disabled = current >= parts.length - 1;
+  select.innerHTML = parts.map(p => `<option value="${p.index}">${escapeHtml(t(p.kind === 'images' ? 'parts.optionImages' : 'parts.option', {
+    modality: p.modality || '?', plane: p.plane ? t(`plane.${p.plane}`).toLowerCase() : '',
+    desc: p.description || t('parts.untitled'), n: p.slices,
+  }))}</option>`).join('');
+  select.value = String(m.part || 0);
+  select.title = select.selectedOptions[0]?.textContent || '';
+}
+
+/** Open series k of the current exam, at the same anatomical position. */
+async function goToPart(k) {
+  const v = state.primary;
+  const parts = v?.meta.parts || [];
+  if (!v || k < 0 || k >= parts.length || k === (v.meta.part || 0) || parts[k].kind === 'document') return;
+  const folder = v.meta.folder || baseId(v.id);
+  const target = parts[k];
+  const at = v.isImages || target?.kind !== 'volume' ? null : v.patientMM(state.cursor);
+  if (!(await openPrimary(k ? `${folder}~${k}` : folder, { at }))) {
+    renderParts(); // failed: show the series that is still open
+  }
+}
+
+function stepPart(delta) {
+  const v = state.primary;
+  if (!v) return;
+  const k = (v.meta.part || 0) + delta;
+  if (v.meta.parts?.[k]?.kind !== 'document') goToPart(k);
+}
+
+$('part-select').addEventListener('change', e => goToPart(Number(e.target.value)));
+$('part-prev').onclick = () => stepPart(-1);
+$('part-next').onclick = () => stepPart(1);
 
 async function openPrior(id) {
   if (!state.primary) return openPrimary(id);
@@ -854,23 +954,29 @@ function renderSeriesInfo() {
   if (!state.primary) {
     $('title').textContent = t('title.none');
     $('subtitle').textContent = t('subtitle.none');
+    renderParts();
     return;
   }
   const m = state.primary.meta;
+  const folder = m.folder || baseId(m.id);
   const rows = [
-    ['info.series', `<span class="mono">${m.id.slice(0, 16)}…</span>`],
-    ['info.label', labelTag(state.catalog.find(s => s.id === m.id)?.label) || '—'],
+    ['info.series', `<span class="mono" title="${escapeHtml(folder)}">${escapeHtml(folder)}</span>`],
+    ['info.label', labelTag(state.catalog.find(s => s.id === folder)?.label) || '—'],
     ['info.modality', [m.modality, m.series_description].filter(Boolean).join(' · ') || '—'],
     ['info.matrix', `${m.shape[2]} × ${m.shape[1]} × ${m.shape[0]}`],
     ['info.pixel', `${fmt(m.spacing[2], 3)} × ${fmt(m.spacing[1], 3)} mm`],
-    ['info.spacing', `${fmt(m.spacing[0], 2)} mm`],
-    ['info.hu', `${m.hu_range[0]} … ${m.hu_range[1]}`],
+    ...(m.kind === 'images' ? [] : [['info.spacing', `${fmt(m.spacing[0], 2)} mm`]]),
+    [m.unit === '' ? 'info.range' : 'info.hu', `${m.hu_range[0]} … ${m.hu_range[1]}`],
     ['info.load', m.load_seconds != null ? `${fmt(m.load_seconds, 2)} s` : '—'],
   ];
   $('series-info').innerHTML = rows.map(([k, v]) => `<dt>${t(k)}</dt><dd>${v}</dd>`).join('');
-  $('title').textContent = `${m.id.slice(0, 16)}…`;
-  $('subtitle').textContent = t('subtitle.series', { modality: m.modality || 'CT', n: m.shape[0], mm: fmt(m.spacing[0], 1) });
-  document.title = `${m.id.slice(0, 8)} — Luminor`;
+  $('title').textContent = folder;
+  $('title').title = folder;
+  $('subtitle').textContent = [m.series_description, m.kind === 'images'
+    ? t('subtitle.images', { modality: m.modality || '', n: m.shape[0] })
+    : t('subtitle.series', { modality: m.modality || 'CT', n: m.shape[0], mm: fmt(m.spacing[0], 1) })].filter(Boolean).join(' · ');
+  document.title = `${folder.slice(0, 24)} — Luminor`;
+  renderParts();
 }
 
 // ---------------------------------------------------------------------------
@@ -912,6 +1018,8 @@ document.addEventListener('keydown', e => {
     case 'r': for (const v of visibleViewports()) { v.resetView(); v.invalidate(); } return;
     case 'l': return setLayout(LAYOUTS[(LAYOUTS.findIndex(l => l.key === state.layout) + 1) % LAYOUTS.length].key);
     case 'b': return addMarker();
+    case 'n': return stepPart(1);
+    case 'p': return stepPart(-1);
     case 'k': return setLinked(!state.linked);
     case 't': {
       const modes = ['none', 'mip', 'minip', 'avg'];
@@ -924,6 +1032,7 @@ document.addEventListener('keydown', e => {
 // Inspector controls
 // ---------------------------------------------------------------------------
 function setSlabMode(mode) {
+  if (mode !== 'none' && imagesOnly()) { toast(t('images.only2d')); mode = 'none'; }
   state.slab.mode = mode;
   $('slab-mode').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
   if (mode !== 'none') {
@@ -1053,8 +1162,7 @@ async function init() {
     const series = await loadCatalog();
     let last = null;
     try { last = localStorage.getItem('radio.last'); } catch { /* storage unavailable */ }
-    const first = series.find(s => s.id === last) || series[0];
-    if (first) openPrimary(first.id);
+    openFirstAvailable(series, series.some(s => s.id === baseId(last)) ? last : null);
   } catch (err) {
     toast(t('toast.server', { msg: err.message }), true);
   }
