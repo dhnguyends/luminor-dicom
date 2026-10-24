@@ -555,6 +555,158 @@ class VolumeCache:
 # --------------------------------------------------------------------------- #
 # HTTP                                                                        #
 # --------------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+# Google Drive (shared folders, "anyone with the link", no API key)          #
+# --------------------------------------------------------------------------- #
+DRIVE_ID = re.compile(r"^[A-Za-z0-9_-]{10,}$")
+DRIVE_URL = re.compile(
+    r"^https://drive\.google\.com/(?:drive/(?:u/\d+/)?folders/|embeddedfolderview\?id=|open\?id=)([A-Za-z0-9_-]{10,})")
+_DRIVE_ENTRY = re.compile(
+    r'<div class="flip-entry" id="entry-([\w-]+)".*?<a href="([^"]+)".*?<div class="flip-entry-title">(.*?)</div>', re.S)
+_UA = {"User-Agent": "Mozilla/5.0 (Luminor DICOM viewer)"}
+
+
+def drive_folder_id(text: str) -> str | None:
+    """Folder id from a Google Drive folder link (or a bare id), else None."""
+    text = (text or "").strip()
+    m = DRIVE_URL.match(text)
+    if m:
+        return m.group(1)
+    return None
+
+
+def _http_get(url: str, timeout: float = 60) -> tuple[bytes, str]:
+    import urllib.request
+
+    req = urllib.request.Request(url, headers=_UA)
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read(), r.headers.get("Content-Type", "")
+
+
+def drive_listing(folder_id: str) -> tuple[str, list[tuple[str, str, bool]]]:
+    """(folder title, [(id, name, is_folder), ...]) from the public folder page."""
+    import html as htmlmod
+
+    import urllib.error
+
+    try:
+        body, _ = _http_get(f"https://drive.google.com/embeddedfolderview?id={folder_id}")
+    except urllib.error.HTTPError as exc:  # unknown or private folder
+        if exc.code in (401, 403, 404):
+            raise PermissionError("not_shared") from exc
+        raise
+    page = body.decode("utf-8", "replace")
+    title = re.search(r"<title>(.*?)</title>", page, re.S)
+    entries = [(fid, htmlmod.unescape(name).strip(), "/folders/" in href)
+               for fid, href, name in _DRIVE_ENTRY.findall(page)]
+    if title is None and not entries:
+        raise PermissionError("not_shared")
+    return htmlmod.unescape(title.group(1)).strip() if title else folder_id, entries
+
+
+def _safe_name(name: str, used: set[str]) -> str:
+    """A file or folder name from Drive that is valid on Windows and cannot leave its folder."""
+    clean = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", name).strip(" .") or "file"
+    if clean in ("..", ".") or clean.upper() in ("CON", "PRN", "AUX", "NUL"):
+        clean = f"_{clean}"
+    base, n = clean, 2
+    while clean.lower() in used:  # Drive allows duplicate names in one folder
+        stem, dot, ext = base.rpartition(".")
+        clean = f"{stem} ({n}).{ext}" if dot else f"{base} ({n})"
+        n += 1
+    used.add(clean.lower())
+    return clean
+
+
+class DriveJob:
+    """Downloads a shared Google Drive folder (with sub-folders) into a local cache."""
+
+    def __init__(self, folder_id: str, cache_root: Path):
+        self.folder_id = folder_id
+        self.cache_root = cache_root
+        self.state = "listing"  # listing -> downloading -> done | error | cancelled
+        self.total = self.done = self.skipped = 0
+        self.bytes = 0
+        self.error = None
+        self.path = None
+        self.cancelled = False
+        threading.Thread(target=self._run, daemon=True).start()
+
+    def info(self) -> dict:
+        return {k: getattr(self, k) for k in ("state", "total", "done", "skipped", "bytes", "error")} | \
+            {"path": str(self.path) if self.path else None}
+
+    def _walk(self, folder_id: str, dest: Path, files: list, depth: int = 0) -> None:
+        if depth > 8 or self.cancelled:
+            return
+        _, entries = drive_listing(folder_id)
+        used: set[str] = set()
+        for fid, name, is_folder in entries:
+            target = dest / _safe_name(name, used)
+            if is_folder:
+                self._walk(fid, target, files, depth + 1)
+            else:
+                files.append((fid, target))
+
+    def _download(self, item) -> None:
+        fid, target = item
+        if self.cancelled:
+            return
+        if target.is_file() and target.stat().st_size > 0:  # already in the cache
+            self.skipped += 1
+            self.done += 1
+            return
+        url = f"https://drive.usercontent.google.com/download?id={fid}&export=download&confirm=t"
+        for attempt in range(3):
+            try:
+                data, ctype = _http_get(url, timeout=120)
+                if ctype.startswith("text/html") and data[:200].lstrip().lower().startswith((b"<!doctype", b"<html")):
+                    raise PermissionError("refused")  # quota, permission or virus-scan page
+                target.parent.mkdir(parents=True, exist_ok=True)
+                tmp = target.with_name(target.name + ".part")
+                tmp.write_bytes(data)
+                os.replace(tmp, target)
+                self.bytes += len(data)
+                self.done += 1
+                return
+            except PermissionError:
+                raise
+            except Exception:
+                if attempt == 2:
+                    raise
+                time.sleep(1 + attempt)
+
+    def _run(self) -> None:
+        try:
+            title, entries = drive_listing(self.folder_id)
+            if not entries:
+                raise PermissionError("not_shared")  # private, wrong link or empty
+            root = self.cache_root / f"{_safe_name(title, set())}-{self.folder_id[:8]}"
+            files: list = []
+            used: set[str] = set()
+            loose = []  # files directly in the shared folder: keep them as one exam
+            for fid, name, is_folder in entries:
+                if is_folder:
+                    self._walk(fid, root / _safe_name(name, used), files, 1)
+                else:
+                    loose.append((fid, name))
+            if loose:
+                exam = root / _safe_name(title, used)
+                files += [(fid, exam / _safe_name(name, set())) for fid, name in loose]
+            self.total = len(files)
+            self.path = root
+            self.state = "downloading"
+            with ThreadPoolExecutor(max_workers=6) as pool:
+                list(pool.map(self._download, files))
+            self.state = "cancelled" if self.cancelled else "done"
+        except PermissionError as exc:
+            self.state, self.error = "error", str(exc) if str(exc) in ("not_shared", "refused") else "refused"
+        except Exception as exc:
+            self.state, self.error = "error", f"{type(exc).__name__}: {exc}"
+        print(f"[luminor] Google Drive {self.folder_id[:8]}: {self.state} "
+              f"({self.done}/{self.total} files, {self.bytes / 1e6:.0f} MB new)", flush=True)
+
+
 _browse_lock = threading.Lock()
 
 
@@ -581,6 +733,9 @@ class Handler(SimpleHTTPRequestHandler):
     browse_folder = staticmethod(tk_browse_folder)
     # Called with the new data folder after a change (the desktop app saves it)
     on_data_change = None
+    # Google Drive downloads: cache folder and the current download
+    drive_cache: Path = APP_DIR / "data" / "drive"
+    drive_job: DriveJob | None = None
 
     @classmethod
     def set_data_folder(cls, data: Path, labels: Path | None = None) -> Catalog:
@@ -674,6 +829,9 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self._endpoint() == "/api/data-folder":
             return self._json(self._folder_info())
+        if self._endpoint() == "/api/drive":
+            job = type(self).drive_job
+            return self._json(job.info() if job else {"state": "idle"})
         route = self._route()
         if route is None:
             return super().do_GET()
@@ -708,6 +866,23 @@ class Handler(SimpleHTTPRequestHandler):
             body = self._read_json_body(64_000)
         except ValueError as exc:
             return self._json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+
+        if endpoint == "/api/drive":  # download a shared Google Drive folder
+            folder_id = drive_folder_id(str(body.get("url") or ""))
+            if not folder_id:
+                return self._json({"error": "drive_url"}, HTTPStatus.BAD_REQUEST)
+            job = type(self).drive_job
+            if job and job.state in ("listing", "downloading"):
+                if job.folder_id == folder_id:
+                    return self._json(job.info())
+                job.cancelled = True
+            type(self).drive_job = DriveJob(folder_id, Path(self.drive_cache))
+            return self._json(type(self).drive_job.info())
+
+        if endpoint == "/api/drive/cancel":
+            if type(self).drive_job:
+                type(self).drive_job.cancelled = True
+            return self._json({"state": "cancelled"})
 
         if endpoint == "/api/browse-folder":
             if self.browse_folder is None:

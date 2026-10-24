@@ -261,6 +261,8 @@ def main() -> int:
     httpd = luminor_server.create_server(data, labels, args.port, findings_dir=USER_DIR / "findings")
     # Remember folders chosen with "Change folder" inside Luminor
     luminor_server.Handler.on_data_change = staticmethod(remember_data_folder)
+    # Google Drive folders are downloaded to the user's profile
+    luminor_server.Handler.drive_cache = USER_DIR / "drive"
     if args.browser or args.server_only:
         # The browser fallback runs tkinter on the main thread: no second picker from the server
         luminor_server.Handler.browse_folder = None

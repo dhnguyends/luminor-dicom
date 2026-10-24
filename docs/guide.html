@@ -97,6 +97,9 @@
   <li>Luminor checks that the folder contains DICOM series, closes the open studies, reloads the library and opens the first series.</li>
 </ol>
 <p>Choose the folder in which <strong>each sub-folder is one series</strong> of <code>.dcm</code> files. If you choose a single series folder, Luminor opens its parent folder. A labels CSV in or just above the folder is picked up automatically. Your DICOM files are only read, never modified.</p>
+<h4>Images on Google Drive</h4>
+<p>You can also paste the link of a <strong>Google Drive folder</strong> (for example <code>https://drive.google.com/drive/folders/…</code>) in the same field and click <strong>Open folder</strong>. The folder must be shared with <strong>“Anyone with the link”</strong>. Luminor downloads it, with its sub-folders, to this computer, showing the progress, then opens it. Files already downloaded are kept, so opening the same link again is quick. Closing the sheet stops the download.</p>
+<div class="callout warn"><span class="ic">!</span><p>A folder shared with “Anyone with the link” can be opened by anyone who obtains the link. For medical images, share the link only with people you trust, and restrict sharing again when you no longer need it.</p></div>
 
 <h3 id="language">Interface language</h3>
 <p>The <strong>EN / FR</strong> button (with a globe) in the toolbar switches the whole interface between English and French without reloading the study: labels, help, findings, the report draft and the on-image text. Luminor remembers your choice; on first launch it follows the browser language.</p>

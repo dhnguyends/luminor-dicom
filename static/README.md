@@ -191,6 +191,7 @@ folder's id; part N opens as `<folder>~N`.
   | `GET` / `PUT /api/series/<id>/findings` | Read or replace the saved findings (JSON list) |
   | `GET` / `POST /api/data-folder` | Current images folder; POST `{"path": …}` switches to another folder (validated, labels found automatically) |
   | `POST /api/browse-folder` | Opens the native folder picker on this computer (tkinter) and returns the chosen path |
+  | `GET/POST /api/drive` | POST `{url}` downloads a Google Drive folder shared with "Anyone with the link" to a local cache (no API key); GET reports progress and the local path; `POST /api/drive/cancel` stops it |
 
   POST and PUT must be `application/json` and are refused when sent by a web page from another
   site (`Origin` check). The desktop app replaces the tkinter picker with the Windows one

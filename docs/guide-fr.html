@@ -103,6 +103,9 @@
   <li>Luminor vérifie que le dossier contient des séries DICOM, ferme les examens ouverts, recharge la bibliothèque et ouvre la première série.</li>
 </ol>
 <p>Choisissez le dossier dans lequel <strong>chaque sous-dossier est une série</strong> de fichiers <code>.dcm</code>. Si vous choisissez un dossier de série, Luminor ouvre son dossier parent. Un fichier CSV d’étiquettes placé dans le dossier ou juste au-dessus est pris en compte automatiquement. Vos fichiers DICOM sont seulement lus, jamais modifiés.</p>
+<h4>Images sur Google Drive</h4>
+<p>Vous pouvez aussi coller le lien d’un <strong>dossier Google Drive</strong> (par exemple <code>https://drive.google.com/drive/folders/…</code>) dans le même champ, puis cliquer sur <strong>Ouvrir le dossier</strong>. Le dossier doit être partagé avec <strong>« Tous les utilisateurs disposant du lien »</strong>. Luminor le télécharge, avec ses sous-dossiers, sur cet ordinateur en affichant la progression, puis l’ouvre. Les fichiers déjà téléchargés sont conservés : rouvrir le même lien est rapide. Fermer la fenêtre arrête le téléchargement.</p>
+<div class="callout warn"><span class="ic">!</span><p>Un dossier partagé avec « Tous les utilisateurs disposant du lien » peut être ouvert par toute personne qui obtient le lien. Pour des images médicales, ne transmettez le lien qu’à des personnes de confiance et restreignez à nouveau le partage lorsque vous n’en avez plus besoin.</p></div>
 
 <h3 id="language">Langue de l’interface</h3>
 <p>Le bouton <strong>FR / EN</strong> (avec un globe) de la barre d’outils fait passer toute l’interface du français à l’anglais et inversement, sans recharger l’examen : libellés, aide, observations, projet de compte rendu et informations affichées sur l’image. Luminor mémorise votre choix ; au premier lancement, il suit la langue du navigateur.</p>

@@ -711,6 +711,7 @@ function openFolderSheet() {
   $('folder-current').textContent = state.folder.path || '—';
   $('folder-browse').hidden = !canBrowse();
   showFolderError(null);
+  showDriveProgress(null);
   $('folder-sheet').showModal();
   $('folder-path').select();
 }
@@ -766,7 +767,61 @@ $('folder-form').addEventListener('submit', e => {
   e.preventDefault();
   const path = $('folder-path').value.trim().replace(/^"|"$/g, '');
   if (!path) return showFolderError('folder.err.missing_path');
-  changeFolder(path);
+  if (/^https?:\/\//i.test(path)) openDriveFolder(path);
+  else changeFolder(path);
+});
+
+// ---------------------------------------------------------------------------
+// Google Drive: download a shared folder to this computer, then open it
+// ---------------------------------------------------------------------------
+let drivePolling = false;
+
+function showDriveProgress(text, fraction) {
+  $('drive-progress').hidden = text == null;
+  $('drive-text').textContent = text || '';
+  $('drive-bar').style.width = `${Math.round((fraction || 0) * 100)}%`;
+}
+
+async function openDriveFolder(url) {
+  showFolderError(null);
+  const button = $('folder-open');
+  button.disabled = true;
+  try {
+    let r = await fetch('/api/drive', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }),
+    });
+    let job = await r.json();
+    if (!r.ok) return showFolderError(job.error === 'drive_url' ? 'folder.err.drive_url' : 'folder.err.drive', { msg: job.error });
+    drivePolling = true;
+    while (drivePolling && (job.state === 'listing' || job.state === 'downloading')) {
+      showDriveProgress(job.state === 'listing' ? t('drive.listing')
+        : t('drive.progress', { done: fmt(job.done), total: fmt(job.total), mb: fmt(job.bytes / 1e6) }) +
+          (job.skipped ? ` · ${t('drive.cached', { n: fmt(job.skipped) })}` : ''),
+        job.total ? job.done / job.total : 0);
+      await new Promise(res => setTimeout(res, 600));
+      r = await fetch('/api/drive');
+      job = await r.json();
+    }
+    if (!drivePolling || job.state === 'cancelled') return;
+    if (job.state === 'error') {
+      const known = ['not_shared', 'refused'].includes(job.error);
+      return showFolderError(known ? `folder.err.${job.error}` : 'folder.err.drive', { msg: job.error });
+    }
+    showDriveProgress(t('drive.note'), 1);
+    await changeFolder(job.path);
+  } catch (err) {
+    showFolderError('folder.err.drive', { msg: err.message });
+  } finally {
+    drivePolling = false;
+    button.disabled = false;
+  }
+}
+
+// Closing the sheet during a download stops it (files already downloaded are kept)
+$('folder-sheet').addEventListener('close', () => {
+  if (!drivePolling) return;
+  drivePolling = false;
+  fetch('/api/drive/cancel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
 });
 $('folder-browse').onclick = async () => {
   try {

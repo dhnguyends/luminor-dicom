@@ -98,6 +98,8 @@ and acceptance of the competition rules required). Extract `stage1` and choose t
 3. Luminor checks that the folder contains DICOM series, reloads the library and opens the first
    series. It remembers the new folder for the next time.
 
+**From Google Drive:** paste the link of a Google Drive folder shared with **“Anyone with the link”** (`https://drive.google.com/drive/folders/…`) instead of a path, and click **Open folder**. Luminor downloads the folder to `%APPDATA%\Luminor\drive` with a progress bar, then opens it; files already downloaded are reused next time. Anyone who obtains such a link can open the folder, so share medical images with care.
+
 **Before starting Luminor:** double-click **`Choose data folder.cmd`** in the Luminor folder, or run:
 
 ```
